@@ -1,0 +1,12 @@
+[flake8]
+# E201 whitespace after '('
+# E241 multiple spaces after ','
+# E501 line too long
+ignore = "E201, E241, E501"
+
+[tool.pylint.messages_control]
+# C0103: Attribute name "x" doesn't conform to snake_case naming style (invalid-name)
+# C0115: Missing class docstring
+# C0116: Missing function or method docstring
+# W0621: Redefining name 'i' from outer scope
+disable = "C0103, C0115, C0116, W0621"
