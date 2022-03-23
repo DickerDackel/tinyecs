@@ -6,7 +6,7 @@ setup(
     description='The teeniest, tiniest ECS system',
     author='Michael Lamertz',
     url='https://github.com/dickerdackel/tinyecs',
-    packages=[ 'tinyecs' ],
+    packages=['tinyecs'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
