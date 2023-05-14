@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 100
+select = C,E,F,W,B,B950
+
+# E201 whitespace after '['
+# E202 whitespace before ']'
+# E128 continuation line under-indented for visual indent
+# E221 multiple spaces before operator
+# E222 multiple spaces after operator
+# E241 multiple spaces after ','
+# E701 multiple statements on one line (colon)
+# E731 do not assign a lambda expression, use a def
+# W503 line break before binary operator
+# W504 line break after binary operator
+extend-ignore = E201, E202, E203, E128, E221, E222, E241, E501, E701, E731, E741, W503, W504
