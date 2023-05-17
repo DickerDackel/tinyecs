@@ -191,18 +191,25 @@ def eids_by_cids(*cids):
         *cids		All component ids that need to match
 
     """
-    eid_sets = [set(cidx[cid].keys()) for cid in cids]
+    eid_sets = []
+    for cid in cids:
+        try:
+            eid_sets.append(set(cidx[cid].keys()))
+        except KeyError:
+            pass
 
-    return list(set.intersection(*eid_sets))
+    eid_sets = [set(cidx[cid].keys()) if cid in cidx else set() for cid in cids]
+
+    return list(set.intersection(*eid_sets)) if eid_sets else []
 
 
 def cids_of_eid(eid):
     """return a list of component ids of the specified entity
-    
+
         cids_of_eid(eid) -> [cids]
-    
+
     Arguments:
-    
+
         arg		what it does
         ...
     Long description
@@ -229,7 +236,7 @@ def comps_of_eid(eid, *cids):
     return [eidx[eid][cid] for cid in cids]
 
 
-def run_system(dt, fkt, *cids):
+def run_system(dt, fkt, *cids, **kwargs):
     """run the system for the matching cids
 
         run_system(dt, fkt, *cids) -> {eid: fkt(dt, eid, *comps), ...}
@@ -249,10 +256,10 @@ def run_system(dt, fkt, *cids):
     """
     eids = eids_by_cids(*cids)
 
-    return {eid: fkt(dt, eid, *comps_of_eid(eid, *cids))
+    return {eid: fkt(dt, eid, *comps_of_eid(eid, *cids), **kwargs)
             for eid in eids}
 
-, 
+
 def run_all_systems(dt):
     """Run all registered systems
 
