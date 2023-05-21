@@ -70,9 +70,9 @@ def test_add_component():
     assert ecs.eidx[e2]['velocity'].dx == 5
     assert ecs.eidx[e2]['health'].health == 1000
 
-    with pytest.raises(KeyError) as e:
+    with pytest.raises(ecs.UnknownEntityError) as e:
         ecs.add_component('xyzzy', 'name', 'Lorem ipsum')
-    assert 'xyzzy not registered' in str(e.value)
+    assert 'not registered' in str(e.value)
 
 
 def test_remove_component():
@@ -97,6 +97,9 @@ def test_eids_by_cids():
     assert ecs.eids_by_cids('name') == list(set([e1, e2]))
     assert ecs.eids_by_cids('name', 'health') == [e2]
     assert ecs.eids_by_cids('velocity') == [e2]
+    with pytest.raises(ecs.UnknownComponentError) as e:
+        ecs.comp_of_eid('player', 'non-existent-comp')
+    assert 'not registered with entity' in str(e.value)
 
 
 def test_cids_of_eid():

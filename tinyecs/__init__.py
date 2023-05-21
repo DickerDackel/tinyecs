@@ -38,6 +38,18 @@ cidx = {}
 fidx = {}
 
 
+class UnknownEntityError(KeyError):
+    pass
+
+
+class UnknownComponentError(KeyError):
+    pass
+
+
+class UnknownSystemError(KeyError):
+    pass
+
+
 def create_entity(tag=None, **kwargs):
     """Create a new entity
 
@@ -107,7 +119,7 @@ def add_component(eid, cid, comp):
     global eidx, cidx
 
     if eid not in eidx:
-        raise KeyError(f'{eid} not registered')
+        raise UnknownEntityError(f'Entity {eid} is not registered')
 
     if cid not in cidx:
         cidx[cid] = {}
@@ -120,9 +132,9 @@ def remove_component(eid, cid):
     """remove a component from an entity
 
         remove_component(eid, cid) -> None
-    
+
     Arguments:
-    
+
         eid		The entity to remove the component from
         cid     The component id to remove
 
@@ -185,21 +197,22 @@ def eids_by_cids(*cids):
     """get eids that match all specified cids
 
         eids_by_cid(*cids) -> [eids]
-    
+
     Arguments:
-    
+
         *cids		All component ids that need to match
 
     """
     eid_sets = []
     for cid in cids:
         try:
+            # Keys of cidx[cid] is a list of eids
             eid_sets.append(set(cidx[cid].keys()))
         except KeyError:
-            pass
+            return []
 
-    eid_sets = [set(cidx[cid].keys()) if cid in cidx else set() for cid in cids]
-
+    # The intersection of eid_sets contains all eids that are registered for
+    # all components.
     return list(set.intersection(*eid_sets)) if eid_sets else []
 
 
@@ -214,6 +227,9 @@ def cids_of_eid(eid):
         ...
     Long description
     """
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     return list(eidx[eid].keys())
 
 
@@ -230,10 +246,35 @@ def comps_of_eid(eid, *cids):
     While cids_of_eid gets component IDs, this function now gets the actual
     components containing the data.
     """
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     if not cids:
         return eidx[eid].values()
 
-    return [eidx[eid][cid] for cid in cids]
+    try:
+        return [eidx[eid][cid] for cid in cids]
+    except KeyError as e:
+        raise UnknownComponentError(f'Component {e} not registered with entity {eid}') from e
+
+
+def comp_of_eid(eid, cid):
+    """get a single component from an entity
+
+        comp_of_eid(eid, cid) -> component
+
+    Arguments:
+
+        eid     the entity id from which to get the component
+        cid     the component id to filter for
+
+    Returns:
+
+        component
+
+    long description...
+    """
+    return comps_of_eid(eid, cid)[0]
 
 
 def run_system(dt, fkt, *cids, **kwargs):
