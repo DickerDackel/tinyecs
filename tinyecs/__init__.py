@@ -128,6 +128,9 @@ def add_component(eid, cid, comp):
     eidx[eid][cid] = comp
 
 
+update_component = add_component
+
+
 def remove_component(eid, cid):
     """remove a component from an entity
 
