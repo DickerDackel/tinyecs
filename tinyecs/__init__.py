@@ -35,7 +35,8 @@ from uuid import uuid4
 
 eidx = {}
 cidx = {}
-fidx = {}
+sidx = {}
+didx = {}
 
 
 class UnknownEntityError(KeyError):
@@ -48,6 +49,19 @@ class UnknownComponentError(KeyError):
 
 class UnknownSystemError(KeyError):
     pass
+
+
+def reset():
+    """Remove everything registered in the ECS.
+
+        ecs.reset() -> None
+
+    Use this to clear everything, e.g. before a new game
+    """
+    eidx.clear()
+    cidx.clear()
+    sidx.clear()
+    didx.clear()
 
 
 def create_entity(tag=None, **kwargs):
@@ -175,7 +189,7 @@ def add_system(fkt, *comps):
     This function is called for every entity that matches all specified
     component ids.
     """
-    fidx[fkt] = comps
+    sidx[fkt] = comps
 
 
 def remove_system(fkt):
@@ -191,7 +205,22 @@ def remove_system(fkt):
     """
     # Ignore unregistered systems, since we're removing anyways
     try:
-        del fidx[fkt]
+        del sidx[fkt]
+    except KeyError:
+        pass
+
+
+def add_system_to_domain(domain, system):
+    if domain not in didx:
+        didx[domain] = set()
+    didx[domain].add(system)
+
+
+def remove_system_from_domain(domain, system):
+    if domain not in didx:
+        return
+    try:
+        didx[domain].remove(system)
     except KeyError:
         pass
 
@@ -317,4 +346,22 @@ def run_all_systems(dt):
     appropriate components.
     """
     return {fkt: run_system(dt, fkt, *comps)
-            for fkt, comps in fidx.items()}
+            for fkt, comps in sidx.items()}
+
+
+def run_domain(dt, domain):
+    """Run all systems within domain
+
+        run_domain(dt) -> {system: run_system-result, ...}
+
+    Arguments:
+
+        dt      delta time
+
+    This is the same as run_all_systems, but limited to a specific domain.
+    """
+    if domain not in didx:
+        return {}
+
+    return {fkt: run_system(dt, fkt, *sidx[fkt])
+            for fkt in didx[domain]}

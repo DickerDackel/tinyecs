@@ -67,7 +67,7 @@ print(f'My walker object is {ten_seconds_walker}')
 print(f'It has the following components: {ecs.cids_of_eid(ten_seconds_walker)}')
 print(f'All entities: {ecs.eidx}')
 print(f'All components: {ecs.cidx}')
-print(f'All systems: {ecs.fidx}')
+print(f'All systems: {ecs.sidx}')
 
 ecs.run_system(1, render_system, Comps.PRINTABLE)
 for i in range(15):
@@ -77,7 +77,7 @@ for i in range(15):
 
 print(f'All entities: {ecs.eidx}')
 print(f'All components: {ecs.cidx}')
-print(f'All systems: {ecs.fidx}')
+print(f'All systems: {ecs.sidx}')
 
 print('*' * 72)
 print('2nd run, run_all_systems')
@@ -85,6 +85,9 @@ print('*' * 72)
 ecs.add_system(motion_system, Comps.POSITION, Comps.VELOCITY)
 ecs.add_system(lifetime_system, Comps.LIFETIME)
 ecs.add_system(render_system, Comps.PRINTABLE)
+ecs.add_system_to_domain('updates', motion_system)
+ecs.add_system_to_domain('updates', lifetime_system)
+ecs.add_system_to_domain('render', render_system)
 
 ten_seconds_walker = ecs.create_entity(tag='Walker')
 ecs.add_component(ten_seconds_walker, Comps.NAME, '10 Seconds Walker')
@@ -97,11 +100,13 @@ print(f'My walker object is {ten_seconds_walker}')
 print(f'It has the following components: {ecs.cids_of_eid(ten_seconds_walker)}')
 print(f'All entities: {ecs.eidx}')
 print(f'All components: {ecs.cidx}')
-print(f'All systems: {ecs.fidx}')
+print(f'All systems: {ecs.sidx}')
 
 for i in range(15):
-    ecs.run_all_systems(1)
+    # ecs.run_all_systems(1)
+    ecs.run_domain(1, 'updates')
+    ecs.run_domain(1, 'render')
 
 print(f'All entities: {ecs.eidx}')
 print(f'All components: {ecs.cidx}')
-print(f'All systems: {ecs.fidx}')
+print(f'All systems: {ecs.sidx}')
