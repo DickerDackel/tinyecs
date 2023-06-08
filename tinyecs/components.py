@@ -14,6 +14,9 @@ since in the backend, tinyecs is just a bunch of dicts.  If you want to roll
 your own component ID scheme, there is nothing special about the things defined
 here, just do your own.
 
+    * EXTENSION
+        - A component adding more components to its entity at a later time.  It
+          contains an initial delay and the list of components to add
     * POSITION
         - A component to hold x/y coordinates, an orientation angle
     * MOMENTUM
@@ -49,6 +52,7 @@ by a system.
 
 See the documentation of the actual classes below for what they are.
 
+    * Extension
     * Position
     * Momentum
     * Force
@@ -63,7 +67,11 @@ See the documentation of the actual classes below for what they are.
 
 Systems:
 
-    * momentum_system(dt, eid, position, momentum):
+    * extension_system(dt, eid, comps):
+        if the initial delay is passed, add all components to the entity
+        also removes the Extension component.
+
+    * momentum_system(dt, eid, position, momentum
         apply the momentup component to the position component
 
     * force_system(dt, eid, force, momentum):
@@ -82,7 +90,7 @@ Systems:
     * sprite_system(dt, eid, sprite, position):
 
        The sprite comp is directly derived from pygame.sprite.Sprite and
-       expected to be placed into a sprite group for rendering. 
+       expected to be placed into a sprite group for rendering.
 
        The position will be applied to sprite.rect.center
 
@@ -141,6 +149,7 @@ from pygame.math import Vector2
 
 
 class Comp(Enum):
+    EXTENSION = auto()
     POSITION = auto()
     MOMENTUM = auto()
     ANGULAR_MOMENTUM = auto()
@@ -155,6 +164,45 @@ class Comp(Enum):
     SPRITE_CYCLE = auto()
     DEAD = auto()
     CONTAINER = auto()
+
+
+@dataclass
+class Extension:
+    """A component carrying a list of components to add later
+
+        Extension(delay, components)
+
+    Arguments
+        delay       A Cooldown object to wait before extending
+        components  A dict of {cid: component, ...} to extend with
+
+    """
+    delay: Cooldown
+    components: dict
+
+
+def extension_system(dt, eid, extension):
+    """add predefined components to the current entity
+
+        tinyecs.add_system(extension_system, Comp.EXTENSION)
+        tinyecs.run_system(extension_system, Comp.EXTENSION)
+
+    Arguments:
+
+        dt          delta time
+        eid         entity id
+        components  dict of {component_id: component, ...}
+
+    This system adds the defined additional components to the entity specified
+    by eid, and removes itself from the entities' components.
+    """
+    if not extension.delay.cold:
+        return
+
+    for cid, c in extension.components.items():
+        ecs.add_component(eid, cid, c)
+
+    ecs.remove_component(eid, Comp.EXTENSION)
 
 
 @dataclass
