@@ -530,19 +530,23 @@ def sprite_system(dt, eid, sprite, position):
 class SpriteCycle:
     """A component containing a list of images to cycle in a fixed interval
 
-        SpriteCycle(image_list, cooldown)
+        SpriteCycle(image_list, cooldown, once=False, kill=True)
 
     Arguments/Attributes:
 
-        image_list      A list of pygame.Surface objects
-        cooldown        The delay between cycling through the images
-        image_iter      The iterator that cycles over the images
+        image_list          A list of pygame.Surface objects
+        cooldown            The delay between cycling through the images
+        image_iter          The iterator that cycles over the images
+        once                Should the animation run only once or cycle endlessly
+        kill                if once, should the sprite be killed, or should it stay on the final image?
 
-    Long description
+    This is the data for the sprite_cycle_system, which changes a sprite image
+    according to the rules specified here.
     """
     image_list: list[pygame.Surface] = field(default_factory=list)
     cooldown: Cooldown = None
     once: bool = False
+    kill: bool = True
     image_iter: iter = field(init=False)
 
     def __post_init__(self):
@@ -577,15 +581,14 @@ def sprite_cycle_system(dt, eid, sprite, sprite_cycle):
     sprite_cycle.cooldown.reset()
 
     try:
-        sprite.image = next(sprite_cycle.image_iter)
-        print(f'new image {sprite.image}')
+        image = next(sprite_cycle.image_iter)
     except StopIteration:
-        sprite.kill()
-        sprite_cycle.cooldown.reset()
-        sprite_cycle.cooldown.pause()
-        ecs.remove_entity(eid)
-
-    sprite.rect = sprite.image.get_rect(center=sprite.rect.center)
+        if sprite_cycle.kill:
+            sprite.kill()
+            ecs.remove_entity(eid)
+    else:
+        sprite.image = image
+        sprite.rect = sprite.image.get_rect(center=sprite.rect.center)
 
 
 class Dead:
