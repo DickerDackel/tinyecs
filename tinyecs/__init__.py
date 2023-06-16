@@ -33,10 +33,11 @@ substract health from a player entity.
 
 from uuid import uuid4
 
-eidx = {}
-cidx = {}
-sidx = {}
-didx = {}
+eidx = {}  # entity index
+cidx = {}  # component id index
+sidx = {}  # system index
+didx = {}  # domain index
+oidx = {}  # object index
 
 
 class UnknownEntityError(KeyError):
@@ -64,7 +65,12 @@ def reset():
     didx.clear()
 
 
-def create_entity(tag=None, **kwargs):
+def add_components(eid, components):
+    for cid, comp in components.items():
+        add_component(eid, cid, comp)
+
+
+def create_entity(tag=None, components=None):
     """Create a new entity
 
         create_entity(tag=None, **kwargs) --> entity_id
@@ -82,8 +88,8 @@ def create_entity(tag=None, **kwargs):
     eidx[eid] = {}
 
     # Add optionally passed components
-    for cid, comp in kwargs.items():
-        add_component(eid, cid, comp)
+    if components:
+        add_components(eid, components)
 
     return eid
 
@@ -106,7 +112,13 @@ def remove_entity(eid):
         return
 
     for cid in cids:
-        del cidx[cid][eid]
+        try:
+            obj = cidx[cid][eid]
+            del cidx[cid][eid]
+            del oidx[id(obj)]
+        except KeyError:
+            # ignore missing components, just try the others
+            pass
 
     del eidx[eid]
 
@@ -130,7 +142,7 @@ def add_component(eid, cid, comp):
         working on the components, not the component itself.
     Long description
     """
-    global eidx, cidx
+    global eidx, cidx, oidx
 
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
@@ -140,6 +152,7 @@ def add_component(eid, cid, comp):
 
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
+    oidx[id(comp)] = eid
 
 
 update_component = add_component
@@ -161,8 +174,10 @@ def remove_component(eid, cid):
     # Ignore unknown cids or eids since we're removing anyways
     # Also, no need to try each on their own
     try:
+        obj = cidx[cid][eid]
         del cidx[cid][eid]
         del eidx[eid][cid]
+        del oidx[id(obj)]
     except KeyError:
         pass
 
@@ -307,6 +322,22 @@ def comp_of_eid(eid, cid):
     long description...
     """
     return comps_of_eid(eid, cid)[0]
+
+
+def eid_of_comp(comp):
+    """find the entity id for object comp
+
+        eid_of_comp(cid) -> entity
+
+    Arguments:
+
+        comp     the component to find the entity of
+
+    Returns:
+
+        entity
+    """
+    return oidx[id(comp)]
 
 
 def run_system(dt, fkt, *cids, **kwargs):
