@@ -509,20 +509,6 @@ def sprite_system(dt, eid, sprite, position):
 
     Run this to update the sprite before rendering
     """
-
-    # FIXME / TODO:
-    # Make this work with sprite animation, so the cache will need to keep
-    # track of different base sprites in all angles.
-
-    if not hasattr(sprite, 'cache'):
-        sprite.cache = {}
-        sprite.cache[0] = sprite.image
-
-    phi = int(position.phi)
-    if phi not in sprite.cache:
-        sprite.cache[phi] = pygame.transform.rotate(sprite.cache[0], phi)
-
-    sprite.image = sprite.cache[phi]
     sprite.rect = sprite.image.get_rect(center=position.v)
 
 
