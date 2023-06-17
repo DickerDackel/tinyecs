@@ -40,10 +40,10 @@ def move_system(dt, eid, pos, velocity):
 
 UUID_RE = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
 
-e1 = ecs.create_entity(name=SimpleNamespace(name='Lorem'),
-                       health=Health())
-e2 = ecs.create_entity('player', name=SimpleNamespace(name='Ipsum'),
-                       health=Health())
+e1 = ecs.create_entity(components={'name': SimpleNamespace(name='Lorem'),
+                                   'health': Health()})
+e2 = ecs.create_entity('player', 
+                       {'name': SimpleNamespace(name='Ipsum'), 'health': Health()})
 
 
 def re_helper(s, re):
@@ -89,7 +89,7 @@ def test_remove_component():
 def test_add_system():
     ecs.add_system(stats_system, 'name', 'health')
     ecs.add_system(move_system, 'pos', 'velocity')
-    assert ecs.fidx[stats_system] == ('name', 'health')
+    assert ecs.sidx[stats_system] == ('name', 'health')
 
 
 def test_eids_by_cids():
@@ -126,10 +126,10 @@ def test_run_all_systems():
 
 
 def test_remove_system():
-    assert stats_system in ecs.fidx
+    assert stats_system in ecs.sidx
 
     ecs.remove_system(stats_system)
-    assert stats_system not in ecs.fidx
+    assert stats_system not in ecs.sidx
 
     res = ecs.run_all_systems(1)
     assert stats_system not in res
@@ -162,6 +162,11 @@ def test_eidx_and_cidx_consistent():
             assert eid in ecs.eidx
             assert ecs.eidx[eid][cid] == ecs.cidx[cid][eid]
 
+def test_eid_of_comp():
+    e = ecs.create_entity()
+    c = SimpleNamespace(a=1, b=2)
+    ecs.add_component(e, 'test', c)
+    assert ecs.eid_of_comp(c) == e
 
 if __name__ == '__main__':
     test_entity_creation()
