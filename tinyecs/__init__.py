@@ -63,6 +63,7 @@ def reset():
     cidx.clear()
     sidx.clear()
     didx.clear()
+    oidx.clear()
 
 
 def add_components(eid, components):
