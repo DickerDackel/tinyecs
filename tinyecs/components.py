@@ -530,11 +530,9 @@ def sprite_system(dt, eid, sprite, position):
     key = f'{img_id}x1@{phi}'
 
     if img_id not in sprite.cache:
-        print(f'new base image {img_id}')
         sprite.cache[img_id] = {}
     if key not in sprite.cache[img_id]:
         sprite.cache[img_id][key] = pygame.transform.rotate(sprite.base_image, phi)
-        print(f'new transformation {key}')
 
     sprite.image = sprite.cache[img_id][key]
     sprite.rect = sprite.image.get_rect(center=position.v)
@@ -709,16 +707,10 @@ def wrap_around_system(dt, eid, container, sprite, position, momentum):
     elif r.right >= container.right and momentum.v.x > 0:
         position.v.x -= container.width
 
-    print(f'{r.top} < 0?  {momentum.v.y} < 0?')
-    print(f'{r.bottom} >= {container.bottom}?  {momentum.v.y} > 0?')
     if r.top < 0 and momentum.v.y < 0:
-        print(f'{position.v.y} -> ', end='')
         position.v.y += container.height
-        print(f'{position.v.y}')
     elif r.bottom >= container.bottom and momentum.v.y > 0:
-        print(f'{position.v.y} -> ', end='')
         position.v.y -= container.height
-        print(f'{position.v.y}')
 
 
 def target_system(dt, eid, target_eid, thrust, momentum, position):
