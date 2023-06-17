@@ -42,7 +42,7 @@ UUID_RE = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 e1 = ecs.create_entity(components={'name': SimpleNamespace(name='Lorem'),
                                    'health': Health()})
-e2 = ecs.create_entity('player', 
+e2 = ecs.create_entity('player',
                        {'name': SimpleNamespace(name='Ipsum'), 'health': Health()})
 
 
@@ -142,10 +142,15 @@ def test_remove_system():
 
 
 def test_remove_entity():
+    comps = ecs.comps_of_eid(e1)
+
     ecs.remove_entity(e1)
     assert e1 not in ecs.eidx
     for c in ecs.cidx:
         assert e1 not in c
+
+    for c in comps:
+        assert id(c) not in ecs.oidx
 
     ecs.remove_entity('xyzzy')
     assert 'still alive'
@@ -162,11 +167,24 @@ def test_eidx_and_cidx_consistent():
             assert eid in ecs.eidx
             assert ecs.eidx[eid][cid] == ecs.cidx[cid][eid]
 
+
 def test_eid_of_comp():
     e = ecs.create_entity()
     c = SimpleNamespace(a=1, b=2)
     ecs.add_component(e, 'test', c)
     assert ecs.eid_of_comp(c) == e
+
+    ecs.remove_entity(e)
+
+
+def test_reset():
+    ecs.reset()
+    assert len(ecs.eidx) == 0
+    assert len(ecs.cidx) == 0
+    assert len(ecs.sidx) == 0
+    assert len(ecs.didx) == 0
+    assert len(ecs.oidx) == 0
+
 
 if __name__ == '__main__':
     test_entity_creation()
@@ -180,3 +198,5 @@ if __name__ == '__main__':
     test_run_all_systems()
     test_remove_system()
     test_remove_entity()
+    test_eidx_and_cidx_consistent()
+    test_eid_of_comp()
