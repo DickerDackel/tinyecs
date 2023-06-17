@@ -214,13 +214,16 @@ class Position:
     Arguments
         tuple       (x, y) position
         phi         The direction the object is pointing towards
+        phi_step    angle only steps in multiples of phi_step, e.g. 10 degrees
 
     Attributes:
-        v       The position as Vector2, created from tuple
-        phi     Rotation of the entity, default is 0, ccw is positive
+        v           The position as Vector2, created from tuple
+        phi         Rotation of the entity, default is 0, ccw is positive
+        phi_step    See above
     """
     t: InitVar[tuple] = (0, 0)
     phi: float = 0
+    phi_step: float = 0
     v: Vector2 = field(init=False, default_factory=Vector2)
 
     def __post_init__(self, t):
@@ -254,7 +257,7 @@ class Momentum:
         self.v = Vector2(t)
 
 
-def momentum_system(dt, eid, position, momentum):
+def momentum_system(dt, eid, momentum, position):
     """apply linear and angular momentum to the position of an entity
 
         tinyecs.add_system(momentum_system, Comp.POSITION, Comp.MOMENTUM)
@@ -278,7 +281,7 @@ def momentum_system(dt, eid, position, momentum):
 
     # Since screen(0, 0) is top-left, mirror y-momentum
     position.v += momentum.v * dt
-    position.phi += momentum.phi * dt
+    position.phi = (position.phi + momentum.phi * dt) % 360
 
 
 @dataclass
@@ -480,7 +483,9 @@ class Sprite(pygame.sprite.Sprite):
 
     Arguments/Attributes:
 
-        image      The initial image of the sprite
+        image       The initial image of the sprite
+        *groups     Sprite groups to add the image to
+        cache       A sprite cache (dict) for scale and rotated images
 
     This component only holds the sprite (consisting of an sprite.image and a
     sprite.rect as well as sprite groups it's contained in)
@@ -488,10 +493,17 @@ class Sprite(pygame.sprite.Sprite):
     Modification of the image or position of the sprite needs to be done by the
     system and probably other components like a sprite image cycle.
     """
-    def __init__(self, image, *groups):
+    def __init__(self, image, *groups, cache=None, angle_limit=0):
         super().__init__(*groups)
-        self.image = image
+
+        img_id = id(image)
+        self.cache = cache if cache else {}
+        self.cache[img_id] = {}
+
+        self.image = self.base_image = self.cache[img_id][f'{img_id}x1@0'] = image
         self.rect = self.image.get_rect()
+
+        self.angle_limit = angle_limit
 
 
 def sprite_system(dt, eid, sprite, position):
@@ -509,6 +521,22 @@ def sprite_system(dt, eid, sprite, position):
 
     Run this to update the sprite before rendering
     """
+    if position.phi_step == 0:
+        phi = int(position.phi)
+    else:
+        phi = int((position.phi + position.phi_step / 2) // position.phi_step * position.phi_step)
+
+    img_id = id(sprite.base_image)
+    key = f'{img_id}x1@{phi}'
+
+    if img_id not in sprite.cache:
+        print(f'new base image {img_id}')
+        sprite.cache[img_id] = {}
+    if key not in sprite.cache[img_id]:
+        sprite.cache[img_id][key] = pygame.transform.rotate(sprite.base_image, phi)
+        print(f'new transformation {key}')
+
+    sprite.image = sprite.cache[img_id][key]
     sprite.rect = sprite.image.get_rect(center=position.v)
 
 
@@ -546,7 +574,7 @@ class SpriteCycle:
             self.cooldown = Cooldown(1 / len(self.image_list))
 
 
-def sprite_cycle_system(dt, eid, sprite, sprite_cycle):
+def sprite_cycle_system(dt, eid, sprite_cycle, sprite):
     """an animation cycle for sprites
 
         tinyecs.add_system(sprite_cycle_system, Comp.SPRITE, Comp.SPRITE_CYCLE)
@@ -573,7 +601,7 @@ def sprite_cycle_system(dt, eid, sprite, sprite_cycle):
             sprite.kill()
             ecs.remove_entity(eid)
     else:
-        sprite.image = image
+        sprite.image = sprite.base_image = image
         sprite.rect = sprite.image.get_rect(center=sprite.rect.center)
 
 
