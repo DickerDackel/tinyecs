@@ -532,7 +532,7 @@ def sprite_system(dt, eid, sprite, position):
     if img_id not in sprite.cache:
         sprite.cache[img_id] = {}
     if key not in sprite.cache[img_id]:
-        sprite.cache[img_id][key] = pygame.transform.rotate(sprite.base_image, phi)
+        sprite.cache[img_id][key] = pygame.transform.rotate(sprite.base_image, -phi)
 
     sprite.image = sprite.cache[img_id][key]
     sprite.rect = sprite.image.get_rect(center=position.v)
