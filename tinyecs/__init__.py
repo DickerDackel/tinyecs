@@ -113,13 +113,7 @@ def remove_entity(eid):
         return
 
     for cid in cids:
-        try:
-            obj = cidx[cid][eid]
-            del cidx[cid][eid]
-            del oidx[id(obj)]
-        except KeyError:
-            # ignore missing components, just try the others
-            pass
+        remove_component(eid, cid)
 
     del eidx[eid]
 
