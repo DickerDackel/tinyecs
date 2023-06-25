@@ -17,6 +17,8 @@ here, just do your own.
     * EXTENSION
         - A component adding more components to its entity at a later time.  It
           contains an initial delay and the list of components to add
+    * EXECUTE
+        - A component to run a function on listed components of the entity
     * POSITION
         - A component to hold x/y coordinates, an orientation angle
     * MOMENTUM
@@ -53,6 +55,7 @@ by a system.
 See the documentation of the actual classes below for what they are.
 
     * Extension
+    * Execute
     * Position
     * Momentum
     * Force
@@ -67,27 +70,30 @@ See the documentation of the actual classes below for what they are.
 
 Systems:
 
-    * extension_system(dt, eid, comps):
+    * extension_system(dt, eid, comps)
         if the initial delay is passed, add all components to the entity
         also removes the Extension component.
+
+    * execute_system(dt, eid, execute)
+        run a callback with a list of components.
 
     * momentum_system(dt, eid, position, momentum
         apply the momentup component to the position component
 
-    * force_system(dt, eid, force, momentum):
-    * thrust_system(dt, eid, force, position, momentum):
-    * friction_system(dt, eid, force, momentum):
+    * force_system(dt, eid, force, momentum)
+    * thrust_system(dt, eid, force, position, momentum)
+    * friction_system(dt, eid, force, momentum)
         Used in Comp.FORCE, Comp.FRICTION, Comp.THRUST
         Apply a force to the momentum component
         - force_system uses the force as is, e.g. Gravity
         - friction_system applies the value of the force in negative momentum direction
         - thrust_system applies the value of the force in the direction of the position comps phi
 
-    * mouse_system(dt, eid, mouse, position):
+    * mouse_system(dt, eid, mouse, position)
         If an entity contains a mouse component, the current mouse position is
         fetched from pygame.mouse and put into the position comp
 
-    * sprite_system(dt, eid, sprite, position):
+    * sprite_system(dt, eid, sprite, position)
 
        The sprite comp is directly derived from pygame.sprite.Sprite and
        expected to be placed into a sprite group for rendering.
@@ -101,7 +107,7 @@ Systems:
 
        This will currently *not* work with sprite_cycle_system.
 
-    * sprite_cycle_system(dt, eid, sprite, sprite_cycle):
+    * sprite_cycle_system(dt, eid, sprite, sprite_cycle)
 
         Ths sprite.image comp will be updated according to the
         sprite_cycle.delay with a cycle of sprite_cycle.images.
@@ -109,7 +115,7 @@ Systems:
         This is currently *not* compatible with the rotation of the
         sprite_system.
 
-    * dead_system(dt, eid, dead):
+    * dead_system(dt, eid, dead)
 
         If an entity is marked as dead, running this system will remove the
         entity from the tinyecs registry.
@@ -122,12 +128,12 @@ Systems:
         Make a sprite bound from the edge of a container, e.g. a screen rect.
         momentum will be deflected, position will be corrected.
 
-    * wrap_around_system(dt, eid, container, sprite, position, momentum):
+    * wrap_around_system(dt, eid, container, sprite, position, momentum)
 
         Make the sprite wrap around the edge of a container, think Asteroids.
         position will be corrected.
 
-    * target_system(dt, eid, target_eid, position, momentum):
+    * target_system(dt, eid, target_eid, position, momentum)
 
         Make an entity follow a target entity.
 
@@ -150,6 +156,7 @@ from pygame.math import Vector2
 
 class Comp(Enum):
     EXTENSION = auto()
+    EXECUTE = auto()
     POSITION = auto()
     MOMENTUM = auto()
     ANGULAR_MOMENTUM = auto()
@@ -164,6 +171,44 @@ class Comp(Enum):
     SPRITE_CYCLE = auto()
     DEAD = auto()
     CONTAINER = auto()
+
+
+@dataclass
+class Execute:
+    """A component holding the execution info for the execute_system
+
+        Execute(fkt, comps)
+
+    Arguments
+        fkt         The function to call
+        comps       The components to send to the function
+
+    """
+    fkt: callable
+    comps: list
+
+
+def execute_system(dt, eid, execute):
+    """execute a function on a list of components.
+
+        tinyecs.add_system(execute_system, Comp.EXECUTE)
+        tinyecs.run_system(execute_system, Comp.EXECUTE)
+
+    Arguments
+        dt          delta time
+        eid         entity id
+        execute     the Execute component defined above.
+
+    The called function will additionally get deltatime and the eid as
+    parameters, same as any *_system does.
+
+        def callback(dt, eid, *comps)
+
+    comps parameters will have the same order as defined in the Entity.comps
+    object.
+    """
+    comps = ecs.comps_of_eid(eid, *execute.comps)
+    execute.fkt(dt, eid, *comps)
 
 
 @dataclass
@@ -246,11 +291,15 @@ class Momentum:
         phi         The angular momentum in degrees per second
         clamp_v     Maximum linear momentum (think air resistance)
         clamp_phi   Maximum angular momentum
+        point_at    Should the position angle follow the momentum vector?
+
     """
     t: InitVar[tuple] = (0, 0)
     phi: float = 0
     clamp_v: float = 0
     clamp_phi: float = 0
+    point_at: bool = False
+
     v: Vector2 = field(init=False, default_factory=Vector2)
 
     def __post_init__(self, t):
