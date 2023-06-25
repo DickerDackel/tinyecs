@@ -371,7 +371,7 @@ def run_system(dt, fkt, *cids, **kwargs):
             else:
                 break
         if len(comps) == wanted:
-            res[e] = fkt(dt, e, *comps)
+            res[e] = fkt(dt, e, *comps, **kwargs)
 
     return res
 
