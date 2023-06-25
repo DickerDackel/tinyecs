@@ -251,17 +251,19 @@ def eids_by_cids(*cids):
         *cids		All component ids that need to match
 
     """
-    eid_sets = []
-    for cid in cids:
-        try:
-            # Keys of cidx[cid] is a list of eids
-            eid_sets.append(set(cidx[cid].keys()))
-        except KeyError:
-            return []
+    res = []
+    wanted = len(cids)
+    for e, have_comps in eidx.items():
+        comps = []
+        for c in cids:
+            if c in have_comps:
+                comps.append(c)
+            else:
+                break
+        if len(comps) == wanted:
+            res.append(e)
 
-    # The intersection of eid_sets contains all eids that are registered for
-    # all components.
-    return list(set.intersection(*eid_sets)) if eid_sets else []
+    return res
 
 
 def cids_of_eid(eid):
@@ -359,10 +361,19 @@ def run_system(dt, fkt, *cids, **kwargs):
     This function is a direct call.  Alternatively, you can use add_system
     combined with run_all_systems below.
     """
-    eids = eids_by_cids(*cids)
+    wanted = len(cids)
+    res = {}
+    for e, have_comps in eidx.items():
+        comps = []
+        for c in cids:
+            if c in have_comps:
+                comps.append(have_comps[c])
+            else:
+                break
+        if len(comps) == wanted:
+            res[e] = fkt(dt, e, *comps)
 
-    return {eid: fkt(dt, eid, *comps_of_eid(eid, *cids), **kwargs)
-            for eid in eids}
+    return res
 
 
 def run_all_systems(dt):
