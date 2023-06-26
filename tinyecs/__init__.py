@@ -32,6 +32,7 @@ substract health from a player entity.
 """
 
 from uuid import uuid4
+from types import SimpleNamespace
 
 eidx = {}  # entity index
 cidx = {}  # component id index
@@ -362,7 +363,7 @@ def run_system(dt, fkt, *cids, **kwargs):
     combined with run_all_systems below.
     """
     wanted = len(cids)
-    res = {}
+    queue = []
     for e, have_comps in eidx.items():
         comps = []
         for c in cids:
@@ -371,9 +372,9 @@ def run_system(dt, fkt, *cids, **kwargs):
             else:
                 break
         if len(comps) == wanted:
-            res[e] = fkt(dt, e, *comps, **kwargs)
+            queue.append(SimpleNamespace(entity=e, comps=comps))
 
-    return res
+    return {q.entity: fkt(dt, q.entity, *q.comps, **kwargs) for q in queue}
 
 
 def run_all_systems(dt):
