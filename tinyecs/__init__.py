@@ -372,9 +372,9 @@ def run_system(dt, fkt, *cids, **kwargs):
             else:
                 break
         if len(comps) == wanted:
-            queue.append(SimpleNamespace(entity=e, comps=comps))
+            queue.append((e, *comps))
 
-    return {q.entity: fkt(dt, q.entity, *q.comps, **kwargs) for q in queue}
+    return {q[0]: fkt(dt, *q, **kwargs) for q in queue}
 
 
 def run_all_systems(dt):
