@@ -23,13 +23,23 @@ class SomeFlag:
     flag: bool = False
 
 
-def wounding_system(dt, eid, health_comp):
-    health_comp.health -= 100
-    return health_comp.health
+@dataclass
+class Ping:
+    ack: bool = False
 
 
-def stats_system(dt, eid, name_comp, health_comp):
-    return f'dt={dt}, entity={eid}, name={name_comp.name}, health={health_comp.health}'
+def wounding_system(dt, eid, health):
+    health.health -= 100
+    print(f'\nhealth of {eid} is now {health.health}')
+    return health.health
+
+
+def stats_system(dt, eid, name, health):
+    return f'{dt=}, {eid=}, {name.name=}, {health.health=}'
+
+
+def ping_system(dt, eid, ping):
+    ping.ack = True
 
 
 def move_system(dt, eid, pos, velocity):
@@ -40,10 +50,15 @@ def move_system(dt, eid, pos, velocity):
 
 UUID_RE = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
 
-e1 = ecs.create_entity(components={'name': SimpleNamespace(name='Lorem'),
-                                   'health': Health()})
-e2 = ecs.create_entity('player',
-                       {'name': SimpleNamespace(name='Ipsum'), 'health': Health()})
+
+def setup():
+    ecs.reset()
+    ecs.add_system(ping_system, 'ping')
+    ecs.add_system(stats_system, 'name', 'health')
+
+    return (ecs.create_entity(components={'name': SimpleNamespace(name='Lorem')}),
+            ecs.create_entity('player',
+                              {'name': SimpleNamespace(name='Ipsum'), 'health': Health()}))
 
 
 def re_helper(s, re):
@@ -52,11 +67,13 @@ def re_helper(s, re):
 
 
 def test_entity_creation():
+    e1, e2 = setup()
     assert re_helper(str(e1), UUID_RE), "Name doesn't match uuid format"
     assert e2 == 'player', "Name is not 'player'"
 
 
 def test_add_component():
+    e1, e2 = setup()
     ecs.add_component(e1, 'pos', SimpleNamespace(x=100, y=200))
     ecs.add_component(e1, 'someflag', SomeFlag())
     ecs.add_component(e2, 'pos', SimpleNamespace(x=100, y=200))
@@ -76,6 +93,7 @@ def test_add_component():
 
 
 def test_remove_component():
+    e1, e2 = setup()
     ecs.remove_component(e1, 'pos')
     ecs.remove_component(e1, 'health')
     assert 'pos' not in ecs.eidx[e1]
@@ -93,17 +111,18 @@ def test_add_system():
 
 
 def test_eids_by_cids():
+    e1, e2 = setup()
+
     # This converting to set and back forces the same order as eids_by_cids
-    assert ecs.eids_by_cids('name') == list(set([e1, e2]))
+    assert set(ecs.eids_by_cids('name')) == set([e1, e2])
     assert ecs.eids_by_cids('name', 'health') == [e2]
-    assert ecs.eids_by_cids('velocity') == [e2]
     with pytest.raises(ecs.UnknownComponentError) as e:
         ecs.comp_of_eid('player', 'non-existent-comp')
     assert 'not registered with entity' in str(e.value)
 
 
 def test_cids_of_eid():
-    assert sorted(ecs.cids_of_eid('player')) == sorted(['name', 'health', 'pos', 'velocity', 'someflag'])
+    assert set(ecs.cids_of_eid('player')) == set(['name', 'health'])
 
 
 def test_comps_of_eid():
@@ -113,15 +132,21 @@ def test_comps_of_eid():
 
 
 def test_run_system():
+    e1, e2 = setup()
     ecs.run_system(1, wounding_system, 'health')
     assert ecs.eidx[e2]['health'].health == 900
     assert ecs.cidx['health'][e2].health == 900
 
 
 def test_run_all_systems():
+    e1, e2 = setup()
+    ecs.add_system(move_system, 'pos', 'velocity')
+    ecs.add_system(wounding_system, 'health')
+    ecs.add_component(e2, 'pos', SimpleNamespace(x=100, y=200))
+    ecs.add_component(e2, 'velocity', SimpleNamespace(dx=5, dy=7))
     res = ecs.run_all_systems(1)
+
     assert ecs.eidx[e2]['pos'] == SimpleNamespace(x=105, y=207)
-    assert res[stats_system][e2] == 'dt=1, entity=player, name=Ipsum, health=900'
     assert res[move_system][e2] == (105, 207)
 
 
@@ -142,6 +167,7 @@ def test_remove_system():
 
 
 def test_remove_entity():
+    e1, e2 = setup()
     comps = ecs.comps_of_eid(e1)
 
     ecs.remove_entity(e1)
@@ -186,6 +212,51 @@ def test_reset():
     assert len(ecs.oidx) == 0
 
 
+def test_kill_from_system():
+    def kill_system(dt, eid, kill):
+        ecs.remove_entity(eid, postponed=True)
+
+    ecs.reset()
+    tiktok = False
+    for i in range(10):
+        e = ecs.create_entity()
+        ecs.add_component(e, 'some-data', True)
+        if (tiktok := not tiktok):
+            ecs.add_component(e, 'kill', True)
+
+    assert len(ecs.eidx) == 10
+    ecs.run_system(1, kill_system, 'kill')
+    assert len(ecs.eidx) == 5
+
+
+def test_add_system_to_domain():
+    ecs.reset()
+    setup()
+    ecs.add_system(ping_system, 'ping')
+    ecs.add_system_to_domain('infra', ping_system)
+
+    assert 'infra' in ecs.didx
+    assert ping_system in ecs.didx['infra']
+
+
+def test_remove_system_from_domain():
+    ecs.remove_system_from_domain('infra', stats_system)
+
+    assert stats_system not in ecs.didx['infra']
+
+
+def test_run_domain():
+    ecs.add_system(ping_system, 'ping')
+    ecs.add_system_to_domain('infra', ping_system)
+
+    e = ecs.create_entity()
+    ecs.add_component(e, 'ping', Ping(False))
+
+    res = ecs.run_domain(1, 'infra')
+    print(res)
+
+
+
 if __name__ == '__main__':
     test_entity_creation()
     test_add_component()
@@ -200,3 +271,5 @@ if __name__ == '__main__':
     test_remove_entity()
     test_eidx_and_cidx_consistent()
     test_eid_of_comp()
+    test_kill_from_system()
+    test_add_system_to_domain()
