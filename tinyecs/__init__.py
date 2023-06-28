@@ -32,13 +32,14 @@ substract health from a player entity.
 """
 
 from uuid import uuid4
-from types import SimpleNamespace
 
 eidx = {}  # entity index
 cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
 oidx = {}  # object index
+
+kill_list = []  # postponed kills 
 
 
 class UnknownEntityError(KeyError):
@@ -67,11 +68,6 @@ def reset():
     oidx.clear()
 
 
-def add_components(eid, components):
-    for cid, comp in components.items():
-        add_component(eid, cid, comp)
-
-
 def create_entity(tag=None, components=None):
     """Create a new entity
 
@@ -96,17 +92,41 @@ def create_entity(tag=None, components=None):
     return eid
 
 
-def remove_entity(eid):
+def remove_entity(eid, postponed=False):
     """Remove an entity from the system
 
-        remove_entity(entity_id) -> None
+        remove_entity(entity_id, postponed=False) -> None
 
     Removes all bindings to components and the entity_id itself from the
     registry.
 
     non-existent entity_ids will be silently ignored
-    """
 
+    If postponed is True: The entity will *not* be killed but added to a
+    kill_list.  Call purge_kill_list() to really remove the entities from the
+    system.
+
+    This is useful for entities that want to remove themselves from the ecs in
+    a system.  It avoids the system running over a dict that is modified during
+    the loop.
+    """
+    if postponed:
+        kill_list.append(eid)
+    else:
+        _remove_entity(eid)
+
+
+def _reap_kill_list():
+    """Purge entities that are only marked to kill.  See remove_entity with
+    'postponed=True'
+    """
+    for e in kill_list:
+        _remove_entity(e)
+
+    kill_list.clear()
+
+
+def _remove_entity(eid):
     # Ignore unknown eids, since we're removing anyways
     try:
         cids = eidx[eid].keys()
@@ -158,6 +178,11 @@ def add_component(eid, cid, comp):
 
 
 update_component = add_component
+
+
+def add_components(eid, components):
+    for cid, comp in components.items():
+        add_component(eid, cid, comp)
 
 
 def remove_component(eid, cid):
@@ -220,6 +245,9 @@ def remove_system(fkt):
 
     Remove the match for this function from the registry
     """
+    for domain in didx:
+        remove_system_from_domain(domain, fkt)
+
     # Ignore unregistered systems, since we're removing anyways
     try:
         del sidx[fkt]
@@ -230,6 +258,8 @@ def remove_system(fkt):
 def add_system_to_domain(domain, system):
     if domain not in didx:
         didx[domain] = set()
+    if system not in sidx:
+        raise UnknownSystemError(f'system {system} is not registered')
     didx[domain].add(system)
 
 
@@ -253,15 +283,13 @@ def eids_by_cids(*cids):
 
     """
     res = []
-    wanted = len(cids)
-    for e, have_comps in eidx.items():
-        comps = []
+    for e in eidx:
+        complete = True
         for c in cids:
-            if c in have_comps:
-                comps.append(c)
-            else:
+            if c not in eidx[e]:
+                complete = False
                 break
-        if len(comps) == wanted:
+        if complete:
             res.append(e)
 
     return res
@@ -362,19 +390,23 @@ def run_system(dt, fkt, *cids, **kwargs):
     This function is a direct call.  Alternatively, you can use add_system
     combined with run_all_systems below.
     """
-    wanted = len(cids)
-    queue = []
+    res = {}
     for e, have_comps in eidx.items():
         comps = []
+        complete = True
         for c in cids:
             if c in have_comps:
                 comps.append(have_comps[c])
             else:
+                complete = False
                 break
-        if len(comps) == wanted:
-            queue.append((e, *comps))
+        if complete:
+            res[e] = fkt(dt, e, *comps, **kwargs)
 
-    return {q[0]: fkt(dt, *q, **kwargs) for q in queue}
+    if kill_list:
+        _reap_kill_list()
+
+    return res
 
 
 def run_all_systems(dt):
