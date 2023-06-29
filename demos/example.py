@@ -45,7 +45,7 @@ def lifetime_system(dt, eid, lifetime):
     lifetime.time_left -= 1 * dt
     if lifetime.time_left <= 0:
         print(f'removing entity {eid}')
-        ecs.remove_entity(eid)
+        ecs.remove_entity(eid, postponed=True)
 
 
 def render_system(dt, eid, printable):
