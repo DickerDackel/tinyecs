@@ -284,12 +284,10 @@ def eids_by_cids(*cids):
     """
     res = []
     for e in eidx:
-        complete = True
         for c in cids:
             if c not in eidx[e]:
-                complete = False
                 break
-        if complete:
+        else:
             res.append(e)
 
     return res
@@ -393,14 +391,12 @@ def run_system(dt, fkt, *cids, **kwargs):
     res = {}
     for e, have_comps in eidx.items():
         comps = []
-        complete = True
         for c in cids:
             if c in have_comps:
                 comps.append(have_comps[c])
             else:
-                complete = False
                 break
-        if complete:
+        else:
             res[e] = fkt(dt, e, *comps, **kwargs)
 
     if kill_list:
