@@ -409,7 +409,6 @@ def thrust_system(dt, eid, force, position, momentum):
 
     v = Vector2()
     v.from_polar((force.v.length(), position.phi))
-    v.y = -v.y
     momentum.v += v * dt
 
 
@@ -687,7 +686,7 @@ def dead_system(dt, eid, dead):
         sprite.kill()
 
     if dead:
-        ecs.remove_entity(eid)
+        ecs.remove_entity(eid, postponed=True)
 
 
 class Container(pygame.Rect):
