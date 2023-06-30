@@ -1,3 +1,5 @@
+# Ported from https://github.com/Notenlish/pygame_ecs for comparism
+
 from timeit import timeit
 import tinyecs as ecs
 import random

@@ -1,3 +1,5 @@
+# Ported from https://github.com/Notenlish/pygame_ecs for comparism
+
 import subprocess
 import sys
 
