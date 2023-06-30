@@ -68,7 +68,7 @@ def launch_missile():
 
 
 ecs.add_system(ecsc.mouse_system, Comp.MOUSE, Comp.POSITION)
-ecs.add_system(ecsc.momentum_system, Comp.POSITION, Comp.MOMENTUM)
+ecs.add_system(ecsc.momentum_system, Comp.MOMENTUM, Comp.POSITION)
 ecs.add_system(ecsc.sprite_system, Comp.SPRITE, Comp.POSITION)
 ecs.add_system(ecsc.target_system, Comp.TARGET, Comp.THRUST, Comp.MOMENTUM, Comp.POSITION)
 ecs.add_system(ecsc.dead_system, Comp.DEAD)

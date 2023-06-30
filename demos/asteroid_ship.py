@@ -72,7 +72,7 @@ while running:
 
     ecs.run_system(dt, tec.thrust_system, Comp.THRUST, Comp.POSITION, Comp.MOMENTUM)
     ecs.run_system(dt, tec.friction_system, Comp.FRICTION, Comp.MOMENTUM)
-    ecs.run_system(dt, tec.momentum_system, Comp.POSITION, Comp.MOMENTUM)
+    ecs.run_system(dt, tec.momentum_system, Comp.MOMENTUM, Comp.POSITION)
     ecs.run_system(dt, tec.sprite_system, Comp.SPRITE, Comp.POSITION)
     ecs.run_system(dt, tec.wrap_around_system, Comp.CONTAINER, Comp.SPRITE, Comp.POSITION, Comp.MOMENTUM)
 

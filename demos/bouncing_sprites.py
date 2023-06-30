@@ -38,7 +38,7 @@ def create_thing():
     ecs.add_component(entity, Comp.CONTAINER, tec.Container(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
-ecs.add_system(tec.momentum_system, Comp.POSITION, Comp.MOMENTUM)
+ecs.add_system(tec.momentum_system, Comp.MOMENTUM, Comp.POSITION)
 ecs.add_system(tec.sprite_system, Comp.SPRITE, Comp.POSITION)
 ecs.add_system(tec.bounding_box_system, Comp.CONTAINER, Comp.SPRITE, Comp.POSITION, Comp.MOMENTUM)
 

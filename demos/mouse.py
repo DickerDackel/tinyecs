@@ -1,7 +1,7 @@
 import pygame
 import tinyecs as ecs
 
-import tinyecs.components as tec
+import tinyecs.components as ecsc
 
 from importlib.resources import files
 from pygame.math import Vector2
@@ -24,10 +24,10 @@ mouse_image = pygame.image.load(
 ).convert_alpha()
 
 e_mouse = ecs.create_entity('mouse')
-ecs.add_component(e_mouse, Comp.MOUSE, tec.Mouse())
-ecs.add_component(e_mouse, Comp.POSITION, tec.Position(Vector2(0, 0), 0))
-ecs.add_component(e_mouse, Comp.SPRITE, tec.Sprite(mouse_image, mouse_group))
-ecs.add_component(e_mouse, Comp.MOMENTUM, tec.Momentum(Vector2(0, 0), phi=30))
+ecs.add_component(e_mouse, Comp.MOUSE, ecsc.Mouse())
+ecs.add_component(e_mouse, Comp.POSITION, ecsc.Position(Vector2(0, 0), 0))
+ecs.add_component(e_mouse, Comp.SPRITE, ecsc.Sprite(mouse_image, mouse_group))
+ecs.add_component(e_mouse, Comp.MOMENTUM, ecsc.Momentum(Vector2(0, 0), phi=30))
 
 running = True
 while running:
@@ -46,9 +46,9 @@ while running:
     screen.fill(BLACK)
 
     mouse_group.update(dt)
-    ecs.run_system(dt, tec.mouse_system, Comp.MOUSE, Comp.POSITION)
-    ecs.run_system(dt, tec.momentum_system, Comp.POSITION, Comp.MOMENTUM)
-    ecs.run_system(dt, tec.sprite_system, Comp.SPRITE, Comp.POSITION)
+    ecs.run_system(dt, ecsc.mouse_system, Comp.MOUSE, Comp.POSITION)
+    ecs.run_system(dt, ecsc.momentum_system, Comp.MOMENTUM, Comp.POSITION)
+    ecs.run_system(dt, ecsc.sprite_system, Comp.SPRITE, Comp.POSITION)
 
     mouse_group.draw(screen)
 

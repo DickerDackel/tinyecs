@@ -112,7 +112,7 @@ def hunter_system(dt, eid, screen, target, position, momentum, thrust):
 
 def cleanup_system(dt, eid, cleanup, sprite):
     sprite.kill()
-    ecs.remove_entity(eid)
+    ecs.remove_entity(eid, postponed=True)
 
 
 def launch(screen, target, group):
