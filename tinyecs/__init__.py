@@ -92,7 +92,7 @@ def create_entity(tag=None, components=None):
     return eid
 
 
-def remove_entity(eid, postponed=False):
+def remove_entity(eid):
     """Remove an entity from the system
 
         remove_entity(entity_id, postponed=False) -> None
@@ -110,23 +110,6 @@ def remove_entity(eid, postponed=False):
     a system.  It avoids the system running over a dict that is modified during
     the loop.
     """
-    if postponed:
-        kill_list.append(eid)
-    else:
-        _remove_entity(eid)
-
-
-def _reap_kill_list():
-    """Purge entities that are only marked to kill.  See remove_entity with
-    'postponed=True'
-    """
-    for e in kill_list:
-        _remove_entity(e)
-
-    kill_list.clear()
-
-
-def _remove_entity(eid):
     # Ignore unknown eids, since we're removing anyways
     try:
         cids = eidx[eid].keys()
@@ -283,13 +266,15 @@ def eids_by_cids(*cids):
 
     """
     res = []
-    for e in eidx:
+    for e, have_comps in eidx.items():
+        comps = []
         for c in cids:
-            if c not in eidx[e]:
+            if c in have_comps:
+                comps.append(have_comps[c])
+            else:
                 break
         else:
-            res.append(e)
-
+            res.append((e, comps))
     return res
 
 
@@ -389,18 +374,8 @@ def run_system(dt, fkt, *cids, **kwargs):
     combined with run_all_systems below.
     """
     res = {}
-    for e, have_comps in eidx.items():
-        comps = []
-        for c in cids:
-            if c in have_comps:
-                comps.append(have_comps[c])
-            else:
-                break
-        else:
-            res[e] = fkt(dt, e, *comps, **kwargs)
-
-    if kill_list:
-        _reap_kill_list()
+    for e, comps in eids_by_cids(*cids):
+        res[e] = fkt(dt, e, *comps, **kwargs)
 
     return res
 

@@ -62,16 +62,11 @@ def setup(mode):
         tiktok = not tiktok
 
 
-setup(arg)
-for e in ecs.eidx.keys():
-    ecs.remove_entity(e, postponed=True)
-ecs._reap_kill_list()
-
-
 REPEAT = 1_000
 
 setup(arg)
 res = timeit(lambda: ecs.run_system(1, ball_physics_system, Position, Velocity), number=REPEAT)  # type: ignore
+# res = timeit(lambda: ecs.run1(1, ball_physics_system, Position, Velocity), number=REPEAT)  # type: ignore
 print(
     f"Took {res/REPEAT} roughly for each frame, using {len(ecs.eidx)} entities, setting: {arg}"
 )

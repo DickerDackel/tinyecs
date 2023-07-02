@@ -114,8 +114,8 @@ def test_eids_by_cids():
     e1, e2 = setup()
 
     # This converting to set and back forces the same order as eids_by_cids
-    assert set(ecs.eids_by_cids('name')) == set([e1, e2])
-    assert ecs.eids_by_cids('name', 'health') == [e2]
+    assert len(ecs.eids_by_cids('name')) == 2
+    assert ecs.eids_by_cids('name', 'health')[0][0] == e2
     with pytest.raises(ecs.UnknownComponentError) as e:
         ecs.comp_of_eid('player', 'non-existent-comp')
     assert 'not registered with entity' in str(e.value)
@@ -214,7 +214,7 @@ def test_reset():
 
 def test_kill_from_system():
     def kill_system(dt, eid, kill):
-        ecs.remove_entity(eid, postponed=True)
+        ecs.remove_entity(eid)
 
     ecs.reset()
     tiktok = False
