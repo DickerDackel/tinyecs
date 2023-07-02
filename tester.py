@@ -11,22 +11,10 @@ def run(mode):
     print(res, end='')
     return float(res.split()[1])
 
-times = []
-for _ in range(5):
-    times.append(run('perfect'))
+for mode in ['perfect', 'imperfect', 'mixed']:
+    times = []
+    for _ in range(5):
+        times.append(run(mode))
 
-print(f'{mean(times)=}  {median(times)=}  {stdev(times)=}')
-print()
-
-times = []
-for _ in range(5):
-    times.append(run('imperfect'))
-
-print(f'{mean(times)=}  {median(times)=}  {stdev(times)=}')
-print()
-
-times = []
-for _ in range(5):
-    times.append(run('mixed'))
-
-print(f'{mean(times)=}  {median(times)=}  {stdev(times)=}')
+    print(f'{mean(times)=}  {median(times)=}  {stdev(times)=}')
+    print()
