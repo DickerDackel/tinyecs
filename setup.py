@@ -7,7 +7,9 @@ setup(
     author='Michael Lamertz',
     author_email='michael.lamertz@gmail.com',
     url='https://github.com/dickerdackel/tinyecs',
-    packages=find_packages(),
-    install_requires=[],
+    packages=['tinyecs'],
+    install_requires=[
+        'cooldown @ git+https://github.com/dickerdackel/cooldown',
+    ],
     entry_points={},
 )
