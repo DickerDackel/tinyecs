@@ -12,6 +12,7 @@ def run(mode):
     return float(res.split()[1])
 
 for mode in ['perfect', 'imperfect', 'mixed']:
+    print(f'Mode: {mode}')
     times = []
     for _ in range(5):
         times.append(run(mode))
