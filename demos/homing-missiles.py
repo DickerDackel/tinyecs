@@ -2,79 +2,169 @@ import pygame
 import tinyecs as ecs
 import tinyecs.components as ecsc
 
-from importlib.resources import files
-from pygame.math import Vector2
+from math import copysign
 from random import random
 from types import SimpleNamespace
 
-from tinyecs.components import Comp
+from cooldown import Cooldown
+from pygame import Vector2
 
+TITLE = 'Homing missile demo'
 FPS = 60
-SCREEN_WIDTH, SCREEN_HEIGHT = 1024, 768
-BLACK = pygame.Color('black')
+SCREEN = pygame.Rect(0, 0, 1024, 768)
 
 pygame.init()
-pygame.display.set_caption('pygame minimal template')
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption(TITLE)
+screen = pygame.display.set_mode(SCREEN.size)
 clock = pygame.time.Clock()
 pygame.mouse.set_visible(False)
 
 
-sprite_group = pygame.sprite.Group()
+def homing_missile(target, pos, sprite_group):
+    sprite = pygame.sprite.Sprite(sprite_group)
+    sprite.image = pygame.Surface((8, 8))
+    sprite.image.fill('orange')
+    sprite.rect = sprite.image.get_rect(center=pos)
 
-missile_image = pygame.image.load(
-    files('demos.resources').joinpath('missile.png')
-).convert_alpha()
-missile_image = pygame.transform.rotate(missile_image, -90)
+    momentum = Vector2(random() * 200 + 200, 0).rotate(random() * 360)
 
-player_image = pygame.Surface((32, 32), flags=pygame.SRCALPHA)
-pygame.draw.circle(player_image, pygame.Color('red'), (15, 15), 10)
-player_image = pygame.transform.rotate(player_image, -90)
-player_sprite = ecsc.Sprite(player_image, sprite_group)
-
-player = ecs.create_entity('player')
-ecs.add_component(player, Comp.POSITION, ecsc.Position(phi=90))
-ecs.add_component(player, Comp.MOMENTUM, ecsc.Momentum())
-ecs.add_component(player, Comp.SPRITE, player_sprite)
-ecs.add_component(player, Comp.MOUSE, True)
-
-target_image = pygame.Surface((32, 32), flags=pygame.SRCALPHA)
-pygame.draw.circle(target_image, pygame.Color('blue'), (15, 15), 10)
-target_image = pygame.transform.rotate(target_image, -90)
-target_sprite = ecsc.Sprite(target_image, sprite_group)
-
-target = ecs.create_entity()
-ecs.add_component(target, Comp.POSITION, ecsc.Position((50, SCREEN_HEIGHT // 2)))
-ecs.add_component(target, Comp.MOMENTUM, ecsc.Momentum((150, 0)))
-ecs.add_component(target, Comp.SPRITE, target_sprite)
-ecs.add_component(target, Comp.CONTAINER, screen.get_rect())
+    e = ecs.create_entity()
+    ecs.add_component(e, 'position', Vector2(pos))
+    ecs.add_component(e, 'sprite', sprite)
+    ecs.add_component(e, 'homing_missile', SimpleNamespace(target=target,
+                                                           allowed_angle=180,
+                                                           prev_los=None))
+    ecs.add_component(e, 'lifetime', Cooldown(20))
+    ecs.add_component(e, 'momentum', momentum)
 
 
-def launch_missile():
-    pos = ecs.comp_of_eid(player, Comp.POSITION).v
+def create_shard(position, image, *groups):
+    pos = Vector2(position)
+    v = Vector2(random() * 250 + 50, 0).rotate(random() * 360)
+    sprite = pygame.sprite.Sprite(*groups)
+    sprite.image = image
+    sprite.rect = image.get_rect(center=pos)
 
-    speed = random() * 500 + 50
-    direction = random() * 360
-    v = Vector2()
-    v.from_polar((speed, direction))
-
-    missile_sprite = ecsc.Sprite(missile_image, sprite_group)
-    missile = ecs.create_entity()
-    ecs.add_component(missile, Comp.POSITION, ecsc.Position(pos, phi=direction))
-    ecs.add_component(missile, Comp.MOMENTUM, ecsc.Momentum(v))
-    ecs.add_component(missile, Comp.THRUST, SimpleNamespace(speed=500, phi=180))
-    ecs.add_component(missile, Comp.SPRITE, missile_sprite)
-    ecs.add_component(missile, Comp.TARGET, target)
+    e = ecs.create_entity()
+    ecs.add_component(e, 'position', pos)
+    ecs.add_component(e, 'sprite', sprite)
+    ecs.add_component(e, 'momentum', v)
+    ecs.add_component(e, 'lifetime', Cooldown(random() * 0.25))
 
 
-ecs.add_system(ecsc.mouse_system, Comp.MOUSE, Comp.POSITION)
-ecs.add_system(ecsc.momentum_system, Comp.MOMENTUM, Comp.POSITION)
-ecs.add_system(ecsc.sprite_system, Comp.SPRITE, Comp.POSITION)
-ecs.add_system(ecsc.target_system, Comp.TARGET, Comp.THRUST, Comp.MOMENTUM, Comp.POSITION)
-ecs.add_system(ecsc.dead_system, Comp.DEAD)
-ecs.add_system(ecsc.sprite_cycle_system, Comp.SPRITE, Comp.SPRITE_CYCLE)
-ecs.add_system(ecsc.bounding_box_system, Comp.CONTAINER, Comp.SPRITE,
-               Comp.POSITION, Comp.MOMENTUM)
+def homing_missile_system(dt, eid, homing_missile, position, momentum):
+    target_pos = ecs.comp_of_eid(homing_missile.target, 'position')
+
+    target = target_pos
+    los = target - position
+    los_phi = (los.as_polar()[1] + 360) % 360 - 180
+
+    if los.length() < 16:
+        ecs.add_component(eid, 'dead', True)
+
+        image = pygame.Surface((3, 3))
+        image.fill('brown')
+
+        parent = ecs.comp_of_eid(eid, 'sprite')
+        sprite_groups = parent.groups()
+
+        for i in range(32):
+            create_shard(position, image, *sprite_groups)
+        return
+
+    if homing_missile.prev_los is None:
+        homing_missile.prev_los = los_phi
+        return
+
+    delta_phi = ((homing_missile.prev_los - los_phi) + 360) % 360 - 180
+    if delta_phi == 0:
+        return
+
+    homing_missile.prev_los = los_phi
+
+    rotation = min(homing_missile.allowed_angle * dt, abs(delta_phi))
+    momentum.rotate_ip(copysign(rotation, delta_phi))
+
+
+def fire_system(dt, eid, fire, position):
+    for i in range(fire.count):
+        fire.fkt(pos=position)
+
+    ecs.remove_component(eid, 'fire')
+
+
+def bounding_box_system(dt, eid, world, position, momentum):
+    if position.x < 0:
+        position.x = -position.x
+        momentum.x = -momentum.x
+    elif position.x > world.width:
+        position.x = 2 * world.width - position.x
+        momentum.x = -momentum.x
+    if position.y < 0:
+        position.y = -position.y
+        momentum.y = -momentum.y
+    elif position.y > world.height:
+        position.y = 2 * world.height - position.y
+        momentum.y = -momentum.y
+
+
+def create_mouse(sprite_group):
+    sprite = pygame.sprite.Sprite(sprite_group)
+    sprite.image = pygame.Surface((16, 16))
+    pygame.draw.circle(sprite.image, 'cyan', (8, 8), 8, width=1)
+    sprite.rect = sprite.image.get_rect(center=pygame.mouse.get_pos())
+
+    e = ecs.create_entity('mouse')
+    ecs.add_component(e, 'mouse', True)
+    ecs.add_component(e, 'sprite', sprite)
+    ecs.add_component(e, 'position', Vector2())
+    return e
+
+
+def create_target(sprite_group):
+    sprite = pygame.sprite.Sprite(sprite_group)
+    sprite.image = pygame.Surface((24, 24))
+    sprite.image.fill('limegreen')
+    sprite.rect = sprite.image.get_rect()
+
+    v = Vector2(150, 0).rotate(random() * 360)
+
+    e = ecs.create_entity('target')
+    ecs.add_component(e, 'position', Vector2(random() * SCREEN.width,
+                                             random() * SCREEN.height))
+    ecs.add_component(e, 'momentum', v)
+    ecs.add_component(e, 'sprite', sprite)
+    ecs.add_component(e, 'world', SCREEN)
+    return e
+
+
+group = pygame.sprite.Group()
+
+mouse = create_mouse(group)
+target = create_target(group)
+
+enemy_cooldown = Cooldown(7, cold=True)
+enemy_degree = 0
+
+autofire = False
+autofire_cooldown = Cooldown(0.1)
+
+
+def fire_bullet(pos, target, sprite_group):
+    sprite = pygame.sprite.Sprite(sprite_group)
+    sprite.image = pygame.Surface((1, 1))
+    sprite.image.fill('white')
+    sprite.rect = sprite.image.get_rect()
+
+    target_pos = ecs.comp_of_eid(target, 'position')
+    v = (target_pos - pos).rotate(random() * 10 - 5).normalize() * 500
+
+    e = ecs.create_entity()
+    ecs.add_component(e, 'position', Vector2(pos))
+    ecs.add_component(e, 'sprite', sprite)
+    ecs.add_component(e, 'momentum', v)
+    ecs.add_component(e, 'lifetime', Cooldown(1.5))
+
 
 running = True
 while running:
@@ -84,23 +174,32 @@ while running:
         match e.type:
             case pygame.QUIT:
                 running = False
+
             case pygame.KEYDOWN:
                 match e.key:
                     case pygame.K_ESCAPE:
                         running = False
-            case pygame.MOUSEBUTTONDOWN:
+
+            case pygame.MOUSEBUTTONDOWN if e.button == 1:
                 for i in range(7):
-                    launch_missile()
+                    homing_missile(target, e.pos, group)
 
-    screen.fill(BLACK)
+    screen.fill('black')
 
-    ecs.run_all_systems(dt)
+    ecs.run_system(dt, ecsc.mouse_system, 'mouse', 'position')
+    ecs.run_system(dt, ecsc.lifetime_sprite_system, 'lifetime', 'sprite')
+    ecs.run_system(dt, ecsc.dead_sprite_system, 'dead', 'sprite')
+    ecs.run_system(dt, ecsc.dead_system, 'dead')
+    ecs.run_system(dt, ecsc.momentum_system, 'momentum', 'position')
+    ecs.run_system(dt, ecsc.sprite_system, 'sprite', 'position')
+    ecs.run_system(dt, bounding_box_system, 'world', 'position', 'momentum')
+    ecs.run_system(dt, homing_missile_system, 'homing_missile', 'position', 'momentum')
+    ecs.run_system(dt, fire_system, 'fire', 'position')
 
-    sprite_group.update(dt)
-    sprite_group.draw(screen)
+    group.draw(screen)
 
     pygame.display.flip()
     clock.tick(FPS)
-    pygame.display.set_caption(f'FPS: {clock.get_fps():5.2f} @ {len(ecs.eidx):05d} sprites')
+    pygame.display.set_caption(f'{TITLE} - time={pygame.time.get_ticks()/1000:.2f}  fps={clock.get_fps():.2f}')
 
 pygame.quit()
