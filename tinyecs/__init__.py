@@ -258,7 +258,7 @@ def remove_system_from_domain(domain, system):
 def eids_by_cids(*cids):
     """get eids that match all specified cids
 
-        eids_by_cid(*cids) -> [eids]
+        eids_by_cid(*cids) -> [(eid, comps), ...]
 
     Arguments:
 
