@@ -256,6 +256,14 @@ def test_run_domain():
     print(res)
 
 
+def test_eid_has():
+    ecs.reset()
+    e1, e2 = setup()
+    assert ecs.eid_has(e1, 'non-existent-component') is False
+    assert ecs.eid_has(e1, 'non-existent-component', 'name') is False
+    assert ecs.eid_has(e2, 'name') is True
+    assert ecs.eid_has(e2, 'name', 'health') is True
+
 
 if __name__ == '__main__':
     test_entity_creation()

@@ -255,6 +255,23 @@ def remove_system_from_domain(domain, system):
         pass
 
 
+def eid_has(eid, *cids):
+    """check if entity eid has all listed cids.
+
+        eid_has(*cids) -> bool
+
+    Arguments:
+
+        *cids		All component ids that need to match
+
+    """
+    e = eidx[eid]
+    for cid in cids:
+        if cid not in e:
+            return False
+    return True
+
+
 def eids_by_cids(*cids):
     """get eids that match all specified cids
 
