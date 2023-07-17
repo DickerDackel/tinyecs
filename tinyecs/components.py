@@ -17,12 +17,6 @@ def dead_system(dt, eid, dead):
     ecs.remove_entity(eid)
 
 
-def dead_sprite_system(dt, eid, dead, sprite):
-    """Reap entities marked as dead that contain a sprite component."""
-    sprite.kill()
-    dead_system(dt, eid, True)
-
-
 def extension_system(dt, eid, extension):
     """Add additional components.
 
@@ -75,13 +69,6 @@ def friction_system(dt, eid, friction, momentum):
 def lifetime_system(dt, eid, lifetime):
     """Kill an entity after a specified time"""
     if lifetime.cold:
-        ecs.remove_entity(eid)
-
-
-def lifetime_sprite_system(dt, eid, lifetime, sprite):
-    """Kill an entity that contains a sprite after a specified time"""
-    if lifetime.cold:
-        sprite.kill()
         ecs.remove_entity(eid)
 
 
