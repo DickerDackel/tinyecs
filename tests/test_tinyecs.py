@@ -3,6 +3,7 @@ import re
 
 import tinyecs as ecs
 
+from contextlib import nullcontext as does_not_raise
 from dataclasses import dataclass
 from types import SimpleNamespace
 
@@ -94,13 +95,17 @@ def test_add_component():
 
 def test_remove_component():
     e1, e2 = setup()
-    ecs.remove_component(e1, 'pos')
     ecs.remove_component(e1, 'health')
-    assert 'pos' not in ecs.eidx[e1]
     assert 'health' not in ecs.eidx[e1]
     assert 'name' in ecs.eidx[e1]
 
-    ecs.remove_component(e1, 'xyzzy')
+    e1, e2 = setup()
+    ecs.remove_component(e2, 'name', 'health')
+    assert 'still alive'
+    assert 'name' not in ecs.eidx[e2]
+    assert 'health' not in ecs.eidx[e2]
+
+    ecs.remove_component(e1, 'xyzzy')  # must not raise KeyError
     assert 'still alive'
 
 

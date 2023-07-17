@@ -116,15 +116,7 @@ def remove_entity(eid):
     except KeyError:
         return
 
-    for cid in cids:
-        try:
-            obj = cidx[cid][eid]
-            del cidx[cid][eid]
-            del oidx[id(obj)]
-        except KeyError:
-            # ignore missing components, just try the others
-            pass
-
+    remove_component(eid, *cids) 
     del eidx[eid]
 
 
@@ -168,28 +160,32 @@ def add_components(eid, components):
         add_component(eid, cid, comp)
 
 
-def remove_component(eid, cid):
-    """remove a component from an entity
+def remove_component(eid, *cids):
+    """remove components from an entity
 
         remove_component(eid, cid) -> None
 
     Arguments:
 
         eid		The entity to remove the component from
-        cid     The component id to remove
+        cids    The component ids to remove
 
+    If the component has a shutdown attribute, it is assumed to be a list of
+    zero parameter functions to be called in order.
     """
-    global eidx, cidx
-
-    # Ignore unknown cids or eids since we're removing anyways
-    # Also, no need to try each on their own
-    try:
-        obj = cidx[cid][eid]
-        del cidx[cid][eid]
-        del eidx[eid][cid]
-        del oidx[id(obj)]
-    except KeyError:
-        pass
+    for cid in cids:
+        # Ignore unknown cids or eids since we're removing anyways
+        # Also, no need to try each on their own
+        try:
+            obj = cidx[cid][eid]
+            del cidx[cid][eid]
+            del eidx[eid][cid]
+            del oidx[id(obj)]
+        except KeyError:
+            pass
+        else:
+            if hasattr(obj, 'shutdown'):
+                obj.shutdown()
 
 
 def add_system(fkt, *comps):
