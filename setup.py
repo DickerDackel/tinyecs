@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='tinyecs',
-    version='0.1.12',
+    version='0.1.13',
     description='The teeniest, tiniest ECS system',
     author='Michael Lamertz',
     author_email='michael.lamertz@gmail.com',
