@@ -1,9 +1,38 @@
+[project]
+name = "tinyecs"
+version = "0.1.1"
+authors = [
+    { name="Michael Lamertz", email="michael.lamertz@gmail.com" }
+]
+description = "The teeniest, tiniest ECS system"
+readme = "README.md"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: pygame",
+]
+
+dependencies = [
+    "cooldown @ git+https://github.com/dickerdackel/cooldown"
+]
+
+[project.scripts]
+tinyecs-demo = 'tinyecs.demo:main'
+
+[project-urls]
+homepage = "https://github.com/dickerdackel/tinyecs"
+bugtracker = "https://github.com/DickerDackel/tinyecs/issues"
+
 [build-system]
-requires = ['setuptools']
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 addopts = "-rA -s"
 testpaths = [
     "tests",
 ]
+

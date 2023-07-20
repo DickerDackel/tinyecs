@@ -9,15 +9,17 @@ from types import SimpleNamespace
 from cooldown import Cooldown
 from pygame import Vector2
 
-TITLE = 'Homing missile demo'
-FPS = 60
-SCREEN = pygame.Rect(0, 0, 1024, 768)
 
-pygame.init()
-pygame.display.set_caption(TITLE)
-screen = pygame.display.set_mode(SCREEN.size)
-clock = pygame.time.Clock()
-pygame.mouse.set_visible(False)
+def dead_sprite_system(dt, eid, dead, sprite):
+    sprite.kill()
+    ecs.remove_entity(eid)
+
+
+def lifetime_sprite_system(dt, eid, lifetime, sprite):
+    if lifetime.hot:
+        return
+    sprite.kill()
+    ecs.remove_entity(eid)
 
 
 def homing_missile(target, pos, sprite_group):
@@ -121,7 +123,7 @@ def create_mouse(sprite_group):
     return e
 
 
-def create_target(sprite_group):
+def create_target(sprite_group, world):
     sprite = pygame.sprite.Sprite(sprite_group)
     sprite.image = pygame.Surface((24, 24))
     sprite.image.fill('limegreen')
@@ -130,76 +132,95 @@ def create_target(sprite_group):
     v = Vector2(150, 0).rotate(random() * 360)
 
     e = ecs.create_entity('target')
-    ecs.add_component(e, 'position', Vector2(random() * SCREEN.width,
-                                             random() * SCREEN.height))
+    ecs.add_component(e, 'position', Vector2(random() * world.width,
+                                             random() * world.height))
     ecs.add_component(e, 'momentum', v)
     ecs.add_component(e, 'sprite', sprite)
-    ecs.add_component(e, 'world', SCREEN)
+    ecs.add_component(e, 'world', world)
     return e
 
 
-group = pygame.sprite.Group()
+def main():
+    TITLE = 'Homing missile demo'
+    FPS = 60
+    SCREEN = pygame.Rect(0, 0, 1024, 768)
 
-mouse = create_mouse(group)
-target = create_target(group)
+    pygame.init()
+    pygame.display.set_caption(TITLE)
+    screen = pygame.display.set_mode(SCREEN.size)
+    clock = pygame.time.Clock()
+    pygame.mouse.set_visible(False)
 
-enemy_cooldown = Cooldown(7, cold=True)
-enemy_degree = 0
+    group = pygame.sprite.Group()
 
-autofire = False
-autofire_cooldown = Cooldown(0.1)
+    create_mouse(group)
+    target = create_target(group, SCREEN)
+
+    def fire_bullet(pos, target, sprite_group):
+        sprite = pygame.sprite.Sprite(sprite_group)
+        sprite.image = pygame.Surface((1, 1))
+        sprite.image.fill('white')
+        sprite.rect = sprite.image.get_rect()
+
+        target_pos = ecs.comp_of_eid(target, 'position')
+        v = (target_pos - pos).rotate(random() * 10 - 5).normalize() * 500
+
+        e = ecs.create_entity()
+        ecs.add_component(e, 'position', Vector2(pos))
+        ecs.add_component(e, 'sprite', sprite)
+        ecs.add_component(e, 'momentum', v)
+        ecs.add_component(e, 'lifetime', Cooldown(1.5))
+
+    autofire_cooldown = Cooldown(0.1)
+    autofire = False
+    running = True
+    while running:
+        dt = clock.get_time() / 1000.0
+
+        for e in pygame.event.get():
+            match e.type:
+                case pygame.QUIT:
+                    running = False
+
+                case pygame.KEYDOWN:
+                    match e.key:
+                        case pygame.K_ESCAPE:
+                            running = False
+
+                case pygame.MOUSEBUTTONDOWN if e.button == 1:
+                    for i in range(7):
+                        homing_missile(target, e.pos, group)
+
+                case pygame.MOUSEBUTTONDOWN if e.button == 3:
+                    autofire = True
+
+                case pygame.MOUSEBUTTONUP if e.button == 3:
+                    autofire = False
+
+        if autofire and autofire_cooldown.cold:
+            for i in range(7):
+                homing_missile(target, e.pos, group)
+
+        screen.fill('black')
+
+        ecs.run_system(dt, ecsc.mouse_system, 'mouse', 'position')
+        ecs.run_system(dt, lifetime_sprite_system, 'lifetime', 'sprite')
+        ecs.run_system(dt, dead_sprite_system, 'dead', 'sprite')
+        ecs.run_system(dt, ecsc.dead_system, 'dead')
+        ecs.run_system(dt, ecsc.momentum_system, 'momentum', 'position')
+        ecs.run_system(dt, ecsc.sprite_system, 'sprite', 'position')
+        ecs.run_system(dt, bounding_box_system, 'world', 'position', 'momentum')
+        ecs.run_system(dt, homing_missile_system, 'homing_missile', 'position', 'momentum')
+        ecs.run_system(dt, fire_system, 'fire', 'position')
+
+        group.draw(screen)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+        pygame.display.set_caption(f'{TITLE} - time={pygame.time.get_ticks()/1000:.2f}  fps={clock.get_fps():.2f}')
+
+    pygame.quit()
 
 
-def fire_bullet(pos, target, sprite_group):
-    sprite = pygame.sprite.Sprite(sprite_group)
-    sprite.image = pygame.Surface((1, 1))
-    sprite.image.fill('white')
-    sprite.rect = sprite.image.get_rect()
-
-    target_pos = ecs.comp_of_eid(target, 'position')
-    v = (target_pos - pos).rotate(random() * 10 - 5).normalize() * 500
-
-    e = ecs.create_entity()
-    ecs.add_component(e, 'position', Vector2(pos))
-    ecs.add_component(e, 'sprite', sprite)
-    ecs.add_component(e, 'momentum', v)
-    ecs.add_component(e, 'lifetime', Cooldown(1.5))
-
-
-running = True
-while running:
-    dt = clock.get_time() / 1000.0
-
-    for e in pygame.event.get():
-        match e.type:
-            case pygame.QUIT:
-                running = False
-
-            case pygame.KEYDOWN:
-                match e.key:
-                    case pygame.K_ESCAPE:
-                        running = False
-
-            case pygame.MOUSEBUTTONDOWN if e.button == 1:
-                for i in range(7):
-                    homing_missile(target, e.pos, group)
-
-    screen.fill('black')
-
-    ecs.run_system(dt, ecsc.mouse_system, 'mouse', 'position')
-    ecs.run_system(dt, ecsc.lifetime_sprite_system, 'lifetime', 'sprite')
-    ecs.run_system(dt, ecsc.dead_sprite_system, 'dead', 'sprite')
-    ecs.run_system(dt, ecsc.dead_system, 'dead')
-    ecs.run_system(dt, ecsc.momentum_system, 'momentum', 'position')
-    ecs.run_system(dt, ecsc.sprite_system, 'sprite', 'position')
-    ecs.run_system(dt, bounding_box_system, 'world', 'position', 'momentum')
-    ecs.run_system(dt, homing_missile_system, 'homing_missile', 'position', 'momentum')
-    ecs.run_system(dt, fire_system, 'fire', 'position')
-
-    group.draw(screen)
-
-    pygame.display.flip()
-    clock.tick(FPS)
-    pygame.display.set_caption(f'{TITLE} - time={pygame.time.get_ticks()/1000:.2f}  fps={clock.get_fps():.2f}')
-
-pygame.quit()
+if __name__ == '__main__':
+    main()
