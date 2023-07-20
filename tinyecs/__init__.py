@@ -251,6 +251,16 @@ def remove_system_from_domain(domain, system):
         pass
 
 
+def is_eid(eid):
+    """check if the eid is valid.
+
+    Note: It is not discouraged to directly look into the ecs index.  This is
+    just to also provide a proper function if you don't want to dive into the
+    internals.
+    """
+    return eid in eidx
+
+
 def eid_has(eid, *cids):
     """check if entity eid has all listed cids.
 
