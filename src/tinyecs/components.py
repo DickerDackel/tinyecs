@@ -12,6 +12,11 @@ import tinyecs as ecs
 from pygame import Vector2
 
 
+class ESprite(pygame.sprite.Sprite):
+    def shutdown_(self):
+        self.kill()
+
+
 def dead_system(dt, eid, dead):
     """Reap entities marked as dead."""
     ecs.remove_entity(eid)

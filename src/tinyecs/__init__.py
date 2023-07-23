@@ -170,7 +170,7 @@ def remove_component(eid, *cids):
         eid		The entity to remove the component from
         cids    The component ids to remove
 
-    If the component has a shutdown attribute, it is assumed to be a list of
+    If the component has a shutdown_ attribute, it is assumed to be a list of
     zero parameter functions to be called in order.
     """
     for cid in cids:
@@ -184,8 +184,8 @@ def remove_component(eid, *cids):
         except KeyError:
             pass
         else:
-            if hasattr(obj, 'shutdown'):
-                obj.shutdown()
+            if hasattr(obj, 'shutdown_'):
+                obj.shutdown_()
 
 
 def add_system(fkt, *comps):
