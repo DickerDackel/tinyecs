@@ -2,7 +2,9 @@ import pytest
 import re
 
 import tinyecs as ecs
+import tinyecs.components as ecsc
 
+from cooldown import Cooldown
 from contextlib import nullcontext as does_not_raise
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -121,6 +123,7 @@ def test_eids_by_cids():
     # This converting to set and back forces the same order as eids_by_cids
     assert len(ecs.eids_by_cids('name')) == 2
     assert ecs.eids_by_cids('name', 'health')[0][0] == e2
+
     with pytest.raises(ecs.UnknownComponentError) as e:
         ecs.comp_of_eid('player', 'non-existent-comp')
     assert 'not registered with entity' in str(e.value)
@@ -129,11 +132,19 @@ def test_eids_by_cids():
 def test_cids_of_eid():
     assert set(ecs.cids_of_eid('player')) == set(['name', 'health'])
 
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.cids_of_eid('missing-entity')
+    assert 'not registered' in str(e.value)
+
 
 def test_comps_of_eid():
     l = len(ecs.cids_of_eid('player'))
     assert type(ecs.comps_of_eid('player', 'health')[0]) == Health
     assert len(ecs.comps_of_eid('player')) == l
+
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.comps_of_eid('missing-entity', 'irrelevant')
+    assert 'not registered' in str(e.value)
 
 
 def test_run_system():
@@ -156,13 +167,12 @@ def test_run_all_systems():
 
 
 def test_remove_system():
-    assert stats_system in ecs.sidx
+    ecs.add_system(ping_system, 'ping')
+    ecs.add_system_to_domain('test', ping_system)
+    ecs.remove_system(ping_system)
 
-    ecs.remove_system(stats_system)
-    assert stats_system not in ecs.sidx
-
-    res = ecs.run_all_systems(1)
-    assert stats_system not in res
+    assert ping_system not in ecs.sidx
+    assert ping_system not in ecs.didx['test']
 
     def unregistered_function():
         pass
@@ -243,11 +253,17 @@ def test_add_system_to_domain():
     assert 'infra' in ecs.didx
     assert ping_system in ecs.didx['infra']
 
+    ecs.remove_system(ping_system)
+    with pytest.raises(ecs.UnknownSystemError) as e:
+        ecs.add_system_to_domain('test', ping_system)
+    assert 'not registered' in str(e.value)
+
 
 def test_remove_system_from_domain():
     ecs.remove_system_from_domain('infra', stats_system)
 
     assert stats_system not in ecs.didx['infra']
+    assert not ecs.remove_system_from_domain('no-domain', stats_system)
 
 
 def test_run_domain():
@@ -258,7 +274,17 @@ def test_run_domain():
     ecs.add_component(e, 'ping', Ping(False))
 
     res = ecs.run_domain(1, 'infra')
-    print(res)
+    assert ping_system in res
+    assert e in res[ping_system]
+
+    res = ecs.run_domain(1, 'non-existent')
+    assert res == {}
+
+
+def test_is_eid():
+    e = ecs.create_entity()
+    assert ecs.is_eid(e)
+    assert not ecs.is_eid('no-eid')
 
 
 def test_eid_has():
@@ -268,6 +294,22 @@ def test_eid_has():
     assert ecs.eid_has(e1, 'non-existent-component', 'name') is False
     assert ecs.eid_has(e2, 'name') is True
     assert ecs.eid_has(e2, 'name', 'health') is True
+
+
+def test_shutdown():
+    ecs.reset()
+
+    shutdown_successful = False
+
+    class ShutdownEntity():
+        def shutdown_(self):
+            nonlocal shutdown_successful
+            shutdown_successful = True
+
+    e = ecs.create_entity()
+    ecs.add_component(e, 'shutdown-test', ShutdownEntity())
+    ecs.remove_entity(e)
+    assert shutdown_successful
 
 
 if __name__ == '__main__':
