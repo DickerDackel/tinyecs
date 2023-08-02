@@ -4,7 +4,7 @@ import re
 import tinyecs as ecs
 import tinyecs.components as ecsc
 
-from cooldown import Cooldown
+from pgcooldown import Cooldown
 from contextlib import nullcontext as does_not_raise
 from dataclasses import dataclass
 from types import SimpleNamespace

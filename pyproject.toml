@@ -1,7 +1,7 @@
 [project]
 name = "tinyecs"
 description = "The teeniest, tiniest ECS system"
-version = "0.2.0"
+version = "0.2.1"
 readme = "README.md"
 
 authors = [
@@ -17,7 +17,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "cooldown @ git+https://github.com/dickerdackel/cooldown"
+    "pgcooldown"
 ]
 
 [project.scripts]

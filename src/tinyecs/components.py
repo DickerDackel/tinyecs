@@ -61,14 +61,17 @@ def force_system(dt, eid, force, momentum):
     momentum += force * dt
 
 
-def friction_system(dt, eid, friction, momentum):
+def scale_system(dt, eid, scale, momentum):
     """Apply frictoin to a momentum.
 
     In contrast to a force, which adds a directional vector to the momentum,
-    the friction scales the momentum by a factor.  Thus Can also be greater 1.
+    the friction scales the momentum by a factor.  It can also be greater 1.
 
     """
-    momentum *= friction ** dt
+    momentum *= scale ** dt
+
+
+friction_system = scale_system
 
 
 def lifetime_system(dt, eid, lifetime):
@@ -95,3 +98,29 @@ def sprite_system(dt, eid, sprite, position):
         sprite.rect.center = position.xy
     else:
         sprite.rect = sprite.image.get_rect(center=position)
+
+
+def deadzone_system(dt, eid, container, position):
+    """Kill entities moving outside defined boundaries
+
+    To avoid sprites flying off to infinity, a dead zone can be defined, that
+    should be sufficiently larger than the screen.
+
+    Entities entering that zone (or actually, leaving the container rect) will
+    be removed.
+
+    Parameters
+    ----------
+    container : pygame.rect.Rect
+        The boundaries within entities stay alive.
+
+    position : pygame.math.Vector2
+        The location of the entity.
+
+    Returns
+    -------
+    None
+
+    """
+    if not container.collidepoint(position):
+        ecs.remove_entity(eid)

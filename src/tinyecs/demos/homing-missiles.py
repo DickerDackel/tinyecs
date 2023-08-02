@@ -6,7 +6,7 @@ from math import copysign
 from random import random
 from types import SimpleNamespace
 
-from cooldown import Cooldown
+from pgcooldown import Cooldown
 from pygame import Vector2
 
 
