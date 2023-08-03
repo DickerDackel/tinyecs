@@ -302,3 +302,39 @@ def deadzone_system(dt, eid, container, position):
     """
     if not container.collidepoint(position):
         ecs.remove_entity(eid)
+
+
+def wsad_system(dt, eid, wsad, position):
+    """An example system to control a playear with the `wsad` keys.
+
+    Given the following entity:
+
+        e = ecs.create_entity()
+        ecs.add_component(e, 'wsad', 250)  # pixels per second motion speed
+        ecs.add_component(e, 'position', Vector2(x, y))
+        ...
+
+    running this system will modify the position component of the entity.
+
+        ecs.run_system(dt, 'wsad', 'position', 'player')
+
+    Parameters
+    ----------
+    wsad
+        The speed in pixels per second to move when `wsad` are pressed.
+
+    position
+        The position component to change according to the key presses.
+
+    """
+    keys = pygame.key.get_pressed()
+
+    v = Vector2()
+    # Yes, I know, pep8...
+    if keys[pygame.K_w]: v.y -= 1
+    if keys[pygame.K_s]: v.y += 1
+    if keys[pygame.K_a]: v.x -= 1
+    if keys[pygame.K_d]: v.x += 1
+
+    # Normalize so diagonals are not faster then axis motion
+    if v: position += v.normalize() * wsad * dt
