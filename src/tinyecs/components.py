@@ -196,8 +196,34 @@ class RSAImage:
 
 
 def dead_system(dt, eid, dead):
-    """Reap entities marked as dead."""
+    """Reap entities marked with a `dead` component."""
     ecs.remove_entity(eid)
+
+
+def deadzone_system(dt, eid, container, position):
+    """Kill entities moving outside defined boundaries
+
+    To avoid sprites flying off to infinity, a dead zone can be defined, that
+    should be sufficiently larger than the screen.
+
+    Entities entering that zone (or actually, leaving the container rect) will
+    be removed.
+
+    Parameters
+    ----------
+    container : pygame.rect.Rect
+        The boundaries within entities stay alive.
+
+    position : pygame.math.Vector2
+        The location of the entity.
+
+    Returns
+    -------
+    None
+
+    """
+    if not container.collidepoint(position):
+        ecs.remove_entity(eid)
 
 
 def extension_system(dt, eid, extension):
@@ -239,19 +265,6 @@ def force_system(dt, eid, force, momentum):
     momentum += force * dt
 
 
-def scale_system(dt, eid, scale, momentum):
-    """Apply frictoin to a momentum.
-
-    In contrast to a force, which adds a directional vector to the momentum,
-    the friction scales the momentum by a factor.  It can also be greater 1.
-
-    """
-    momentum *= scale ** dt
-
-
-friction_system = scale_system
-
-
 def lifetime_system(dt, eid, lifetime):
     """Kill an entity after a specified time"""
     if lifetime.cold:
@@ -269,6 +282,19 @@ def mouse_system(dt, eid, mouse, position):
     position.xy = Vector2(mp)
 
 
+def scale_system(dt, eid, scale, momentum):
+    """Apply frictoin to a momentum.
+
+    In contrast to a force, which adds a directional vector to the momentum,
+    the friction scales the momentum by a factor.  It can also be greater 1.
+
+    """
+    momentum *= scale ** dt
+
+
+friction_system = scale_system
+
+
 def sprite_system(dt, eid, sprite, position):
     """Set the rect.center of sprite to position."""
 
@@ -276,32 +302,6 @@ def sprite_system(dt, eid, sprite, position):
         sprite.rect.center = position.xy
     else:
         sprite.rect = sprite.image.get_rect(center=position)
-
-
-def deadzone_system(dt, eid, container, position):
-    """Kill entities moving outside defined boundaries
-
-    To avoid sprites flying off to infinity, a dead zone can be defined, that
-    should be sufficiently larger than the screen.
-
-    Entities entering that zone (or actually, leaving the container rect) will
-    be removed.
-
-    Parameters
-    ----------
-    container : pygame.rect.Rect
-        The boundaries within entities stay alive.
-
-    position : pygame.math.Vector2
-        The location of the entity.
-
-    Returns
-    -------
-    None
-
-    """
-    if not container.collidepoint(position):
-        ecs.remove_entity(eid)
 
 
 def wsad_system(dt, eid, wsad, position):
