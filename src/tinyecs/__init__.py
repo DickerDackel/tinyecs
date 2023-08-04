@@ -261,6 +261,26 @@ def is_eid(eid):
     return eid in eidx
 
 
+def has(eid):
+    """Check if eid is valid.
+
+    There is no reason to not use `eid in tinyecs.eidx`.  This is just for
+    people who prefer a functional interface.
+
+    Parameters
+    ----------
+    eid
+        The entity to verify
+
+    Returns
+    -------
+    bool
+        True if the eid is valid
+
+    """
+    return eid in eidx
+
+
 def eid_has(eid, *cids):
     """check if entity eid has all listed cids.
 
