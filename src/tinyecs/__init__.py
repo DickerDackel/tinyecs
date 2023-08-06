@@ -54,6 +54,15 @@ class UnknownSystemError(KeyError):
     pass
 
 
+class RegistryError(RuntimeError):
+    def __init__(self, error, eid, cid, component, other=None):
+        self.error = error
+        self.eid = eid
+        self.cid = cid
+        self.component = component
+        self.other = other
+
+
 def reset():
     """Remove everything registered in the ECS.
 
@@ -66,6 +75,45 @@ def reset():
     sidx.clear()
     didx.clear()
     oidx.clear()
+
+
+def healthcheck():
+    """Perform a health check on the registry.
+
+    This function checks if the cross references between the entity index and
+    the component index are still bi-directional.
+
+    Returns
+    -------
+    bool
+        True if successful, exception otherwise.
+
+    Raises
+    ------
+    RegistryError(error, eid, cid, component, other=None)
+        error       verbose error message
+        eid         id of entity
+        cid         id of component
+        component   component object
+        other       component in other index or None
+
+    """
+    for eid in eidx:
+        for cid in eidx[eid]:
+            if cid not in cidx:
+                raise RegistryError('Component in eidx is missing in cidx', eid=eid, cid=cid, component=eidx[eid][cid])
+            if eid not in cidx[cid]:
+                raise RegistryError('Entity in eidx is missing in cidx component', eid=eid, cid=cid, component=eidx[eid][cid])
+            if eidx[eid][cid] is not cidx[cid][eid]:
+                raise RegistryError('Component object differs between eidx and cidx', eid=eid, cid=cid, component=eidx[eid][cid], other=cidx[cid][eid])
+    for cid in cidx:
+        for eid in cidx[cid]:
+            if eid not in eidx:
+                raise RegistryError('Entity in cidx is missing in eidx', eid=eid, cid=cid, component=cidx[cid][eid])
+            if cid not in eidx[eid]:
+                raise RegistryError('Component in cidx is missing in eidx', eid=eid, cid=cid, component=cidx[cid][eid])
+
+    return True
 
 
 def create_entity(tag=None, components=None):
@@ -150,6 +198,8 @@ def add_component(eid, cid, comp):
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
     oidx[id(comp)] = eid
+
+    return cid
 
 
 update_component = add_component

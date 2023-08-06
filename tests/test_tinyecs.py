@@ -312,6 +312,47 @@ def test_shutdown():
     assert shutdown_successful
 
 
+def test_healthcheck():
+    def _setup():
+        ecs.reset()
+        eid = ecs.create_entity('my-entity')
+        cid = ecs.add_component(eid, 'my-component', True)
+        return eid, cid
+
+    eid, cid = _setup()
+    print(ecs.eidx)
+    print(ecs.cidx)
+
+    del ecs.cidx[cid]
+    with pytest.raises(ecs.RegistryError) as e:
+        ecs.healthcheck()
+    assert 'Component in eidx is missing in cidx' in str(e.value)
+
+    eid, cid = _setup()
+    del ecs.cidx[cid][eid]
+    with pytest.raises(ecs.RegistryError) as e:
+        ecs.healthcheck()
+    assert 'Entity in eidx is missing in cidx component' in str(e.value)
+
+    eid, cid = _setup()
+    ecs.cidx[cid][eid] = False
+    with pytest.raises(ecs.RegistryError) as e:
+        ecs.healthcheck()
+    assert 'Component object differs between eidx and cidx' in str(e.value)
+
+    eid, cid = _setup()
+    del ecs.eidx[eid]
+    with pytest.raises(ecs.RegistryError) as e:
+        ecs.healthcheck()
+    assert 'Entity in cidx is missing in eidx' in str(e.value)
+
+    eid, cid = _setup()
+    del ecs.eidx[eid][cid]
+    with pytest.raises(ecs.RegistryError) as e:
+        ecs.healthcheck()
+    assert 'Component in cidx is missing in eidx' in str(e.value)
+
+
 if __name__ == '__main__':
     test_entity_creation()
     test_add_component()
@@ -326,5 +367,12 @@ if __name__ == '__main__':
     test_remove_entity()
     test_eidx_and_cidx_consistent()
     test_eid_of_comp()
+    test_reset()
     test_kill_from_system()
     test_add_system_to_domain()
+    test_remove_system_from_domain()
+    test_run_domain()
+    test_is_eid()
+    test_eid_has()
+    test_shutdown()
+    test_healthcheck()
