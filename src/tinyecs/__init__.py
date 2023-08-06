@@ -39,8 +39,6 @@ sidx = {}  # system index
 didx = {}  # domain index
 oidx = {}  # object index
 
-kill_list = []  # postponed kills 
-
 
 class UnknownEntityError(KeyError):
     pass
@@ -150,13 +148,6 @@ def remove_entity(eid):
 
     non-existent entity_ids will be silently ignored
 
-    If postponed is True: The entity will *not* be killed but added to a
-    kill_list.  Call purge_kill_list() to really remove the entities from the
-    system.
-
-    This is useful for entities that want to remove themselves from the ecs in
-    a system.  It avoids the system running over a dict that is modified during
-    the loop.
     """
     # Ignore unknown eids, since we're removing anyways
     try:
@@ -164,7 +155,7 @@ def remove_entity(eid):
     except KeyError:
         return
 
-    remove_component(eid, *cids) 
+    remove_component(eid, *cids)
     del eidx[eid]
 
 
