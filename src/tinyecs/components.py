@@ -9,7 +9,10 @@ convenience.
 import pygame
 import tinyecs as ecs
 
+from dataclasses import dataclass, field, InitVar
 from functools import lru_cache
+
+from pgcooldown import Cooldown
 from pygame import Vector2
 
 
@@ -109,7 +112,7 @@ class RSAImage:
 
     This class gets initialized with a base image.
 
-    Every time, any of the attributes `rotation`, `scale` or `alpha` are written,
+    Every time, any of the attributes `rotate`, `scale` or `alpha` are written,
     an appropriate image is created from the base image.
 
     image creation is `functools.lru_cache`d.
@@ -120,10 +123,10 @@ class RSAImage:
         The base image.  Scaling and rotation is always done from this image to
         avoid incremental rounding errors in the image.
 
-    rotation: float = 0
+    rotate: float = 0
     scale: float = 1
     alpha: float = 255
-        Initial rotation, scale, alpha
+        Initial rotation, scaling, alpha
 
     Attributes
     ----------
@@ -135,7 +138,7 @@ class RSAImage:
 
         The rotated/scaled/alpha transparent version of the base image
 
-    rotation: float  (rw)
+    rotate: float  (rw)
     scale: float  (rw)
     alpha: float  (rw)
 
@@ -146,34 +149,60 @@ class RSAImage:
     RuntimeError when the image property is written
 
     """
-    def __init__(self, image, rotation=0, scale=1, alpha=255):
+    def __init__(self, image, rotate=0, scale=1, alpha=255, image_factory=None):
         self._base_image = image
+        self.image_factory = image_factory
+
+        self._locked = False
 
         # Only force image creation on the last property assignment.
-        self._rotation = rotation
+        self._rotate = rotate
         self._scale = scale
         self.alpha = alpha
 
+    def __repr__(self):
+        return f'{__class__}(image={self._base_image}, rotate={self._rotate}, scale={self._scale}, alpha={self._alpha}, locked={self._locked})'
+
+    @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, lck):
+        self._locked = lck
+        if not lck:
+            self.update()
+
     @lru_cache(maxsize=1024)
-    def _create(self, rotation, scale, alpha):
-        image = pygame.transform.rotozoom(self._base_image, -self._rotation - 180, self._scale)
-        image.set_alpha(self._alpha)
+    def _create(self, rotate, scale, alpha):
+        if self.image_factory:
+            image = self.image_factory(rotate=self._rotate, scale=self._scale, alpha=self._alpha)
+        else:
+            print('scaling')
+            image = pygame.transform.rotozoom(self._base_image, -self._rotate - 180, self._scale)
+            image.set_alpha(self._alpha)
         return image
 
     def update(self):
-        self._image = self._create(self.rotation, self.scale, self.alpha)
+        # This needs to be called indirectly, with the parameter set, so
+        # lru_cache can do its thing.
+        if not self.locked:
+            self._image = self._create(self.rotate, self.scale, self.alpha)
+
+    def __call__(self, *args, **kwargs):
+        return self._image
 
     @property
     def image(self):
         return self._image
 
     @property
-    def rotation(self):
-        return self._rotation
+    def rotate(self):
+        return self._rotate
 
-    @rotation.setter
-    def rotation(self, phi):
-        self._rotation = phi
+    @rotate.setter
+    def rotate(self, phi):
+        self._rotate = phi
         self.update()
 
     @property
