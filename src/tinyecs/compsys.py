@@ -9,16 +9,12 @@ convenience.
 import pygame
 import tinyecs as ecs
 
-from dataclasses import dataclass, field, InitVar
-from functools import lru_cache
-
-from pgcooldown import Cooldown
 from pygame import Vector2
 
-__all__ = ["ESprite", "EVSprite", "RSAImage", "LerpThing", "lerpthing_system",
-           "dead_system", "deadzone_system", "extension_system",
-           "force_system", "lifetime_system", "momentum_system",
-           "mouse_system", "scale_system", "sprite_system", "wsad_system"]
+__all__ = ["ESprite", "EVSprite", "RSAImage", "dead_system", "deadzone_system",
+           "extension_system", "force_system", "lifetime_system",
+           "momentum_system", "mouse_system", "scale_system", "sprite_system",
+           "wsad_system"]
 
 
 class ESprite(pygame.sprite.Sprite):
@@ -227,78 +223,6 @@ class RSAImage:
     def alpha(self, alpha):
         self._alpha = alpha
         self.update()
-
-
-@dataclass
-class LerpThing:
-    """A generic gauge that lerps between 2 points.
-
-    This class can be used for scaling, color shifts, momentum, ...
-
-    It gets initialized with 2 Values for t0 and t1, and a time `interval`,
-    then it lerps between these values.
-
-    Once the interval has passed, depending on the `repeat` setting, the object
-    will do one of the following:
-
-        0: Don't repeat, just stop transmogrifying
-        1: Reset and repeat from start
-        2: Bounce back and forth
-
-    Optionally, an easing function can be put on top of `t`.
-
-    Parameters
-    ----------
-    v_t0,
-    v_t1: [int | float]
-        Values for t0 and t1
-
-    ease: callable = lambda x: x
-        An optional easing function to put over t
-
-    interval: Cooldown
-        The length of the lerp.  This duration is mapped onto the range 0 - 1
-        as `t`.
-
-    repeat: int = 0
-        After the interval has finished, how to proceed?
-
-            0: Don't repeat, just stop transmogrifying
-            1: Reset and repeat from start
-            2: Bounce back and forth.  Note, that bounce back is implemented by
-               swapping v_t0 and v_t1.
-
-    """
-    value: float = field(init=False)
-    v_t0: float = 0
-    v_t1: float = 0
-    ease: callable = lambda x: x
-    repeat: int = 0
-    interval: InitVar[Cooldown | float]
-
-    def __post_init__(self, interval):
-        self.value = self.v_t0
-        self.interval = interval if isinstance(interval, Cooldown) else Cooldown(interval)
-
-    def update(self):
-        """Update the state of the LerpThing."""
-
-        lerp = lambda a, b, t: (1 - t) * a + b * t
-
-        if self.interval.cold and self.repeat:
-            if self.repeat == 2:
-                self.v_t0, self.v_t1 = self.v_t1, self.v_t0
-            self.interval.reset()
-
-        if self.interval.hot:
-            t = self.interval.normalized
-            self.value = lerp(self.v_t0, self.v_t1, self.ease(t))
-
-
-def lerpthing_system(dt, eid, lerpthing):
-    """Update a lerpthing through tinyecs."""
-
-    lerpthing.update()
 
 
 def dead_system(dt, eid, dead):
