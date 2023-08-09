@@ -154,12 +154,11 @@ class RSAImage:
         self._base_image = image
         self.image_factory = image_factory
 
-        self._locked = False
-
-        # Only force image creation on the last property assignment.
-        self._rotate = rotate
-        self._scale = scale
+        self.locked = True
+        self.rotate = rotate
+        self.scale = scale
         self.alpha = alpha
+        self.locked = False
 
     def __repr__(self):
         return f'{__class__}(image={self._base_image}, rotate={self._rotate}, scale={self._scale}, alpha={self._alpha}, locked={self._locked})'
@@ -174,13 +173,12 @@ class RSAImage:
         if not lck:
             self.update()
 
-    @lru_cache(maxsize=1024)
+    # @lru_cache(maxsize=1024)
     def _create(self, rotate, scale, alpha):
         if self.image_factory:
-            image = self.image_factory(rotate=self._rotate, scale=self._scale, alpha=self._alpha)
+            image = self.image_factory(rotate=int(self._rotate), scale=round(self._scale, 2), alpha=int(self._alpha))
         else:
-            print('scaling')
-            image = pygame.transform.rotozoom(self._base_image, -self._rotate - 180, self._scale)
+            image = pygame.transform.rotozoom(self._base_image, self._rotate, self._scale)
             image.set_alpha(self._alpha)
         return image
 
