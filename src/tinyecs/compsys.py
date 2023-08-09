@@ -151,7 +151,7 @@ class RSAImage:
 
     """
     def __init__(self, image, rotate=0, scale=1, alpha=255, image_factory=None):
-        self._base_image = image
+        self._base_image = self._image = image
         self.image_factory = image_factory
 
         self.locked = True
@@ -159,9 +159,11 @@ class RSAImage:
         self.scale = scale
         self.alpha = alpha
         self.locked = False
+        if self._image is None:
+            raise RuntimeError('huh?')
 
     def __repr__(self):
-        return f'{__class__}(image={self._base_image}, rotate={self._rotate}, scale={self._scale}, alpha={self._alpha}, locked={self._locked})'
+        return f'{__class__}(image={self._base_image}, rotate={self._rotate}, scale={self._scale}, alpha={self._alpha}, locked={self._locked}, image_factory={self.image_factory})'
 
     @property
     def locked(self):
@@ -176,9 +178,13 @@ class RSAImage:
     # @lru_cache(maxsize=1024)
     def _create(self, rotate, scale, alpha):
         if self.image_factory:
-            image = self.image_factory(rotate=int(self._rotate), scale=round(self._scale, 2), alpha=int(self._alpha))
+            image = self.image_factory(rotate=int(self._rotate),
+                                       scale=round(self._scale, 2),
+                                       alpha=int(self._alpha))
         else:
-            image = pygame.transform.rotozoom(self._base_image, self._rotate, self._scale)
+            image = pygame.transform.rotozoom(self._base_image,
+                                              self._rotate,
+                                              self._scale)
             image.set_alpha(self._alpha)
         return image
 
