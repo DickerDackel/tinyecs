@@ -11,10 +11,10 @@ import tinyecs as ecs
 
 from pygame import Vector2
 
-__all__ = ["ESprite", "EVSprite", "RSAImage", "dead_system", "deadzone_system",
-           "extension_system", "force_system", "lifetime_system",
-           "momentum_system", "mouse_system", "scale_system", "sprite_system",
-           "wsad_system"]
+__all__ = ["ESprite", "EVSprite", "RSAImage", "dead_system",
+           "deadzone_system", "extension_system", "force_system",
+           "lifetime_system", "momentum_system", "mouse_system",
+           "scale_system", "friction_system", "sprite_system", "wsad_system"]
 
 
 class ESprite(pygame.sprite.Sprite):
