@@ -2,7 +2,7 @@ import pytest
 import re
 
 import tinyecs as ecs
-import tinyecs.components as ecsc
+import tinyecs.compsys as ecsc
 
 from pgcooldown import Cooldown
 from contextlib import nullcontext as does_not_raise
