@@ -26,7 +26,6 @@ tinyecs-demo = 'tinyecs.demo:main'
 [project.urls]
 homepage = "https://github.com/dickerdackel/tinyecs"
 bugtracker = "https://github.com/DickerDackel/tinyecs/issues"
-changelog = "https://github.com/dickerdackel/tinyecs/ChangeLog.md"
 
 [build-system]
 requires = ["setuptools"]
