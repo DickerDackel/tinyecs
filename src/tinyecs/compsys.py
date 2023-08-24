@@ -260,6 +260,32 @@ def deadzone_system(dt, eid, container, position):
         ecs.remove_entity(eid)
 
 
+def sprite_world_system(dt, eid, sprite, *, world):
+    """Limit a sprite to a world rect.
+
+    This is similar to `deadzone_system`, except it doesn't work on
+    `container` and `position` components, but on a sprite and a `world`
+    kwarg.
+
+    Parameters
+    ----------
+    sprite: pygame.sprite.Sprite
+        The sprite component to check.
+
+    world: pygame.rect.Rect
+        The container where the sprite can live.  If the `sprite.rect.center`
+        is outside, the sprite entity gets removed.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not world.collidepoint(sprite.rect.center):
+        ecs.remove_entity(eid)
+
+
 def extension_system(dt, eid, extension):
     """Add additional components.
 
