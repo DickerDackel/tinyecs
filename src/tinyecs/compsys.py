@@ -260,7 +260,7 @@ def deadzone_system(dt, eid, container, position):
         ecs.remove_entity(eid)
 
 
-def sprite_world_system(dt, eid, sprite, *, world):
+def sprite_world_system(dt, eid, sprite, world, *, container):
     """Limit a sprite to a world rect.
 
     This is similar to `deadzone_system`, except it doesn't work on
@@ -272,7 +272,10 @@ def sprite_world_system(dt, eid, sprite, *, world):
     sprite: pygame.sprite.Sprite
         The sprite component to check.
 
-    world: pygame.rect.Rect
+    world: bool
+        No functionality, just used for targeting sprites.
+
+    container: pygame.rect.Rect
         The container where the sprite can live.  If the `sprite.rect.center`
         is outside, the sprite entity gets removed.
 
@@ -282,7 +285,7 @@ def sprite_world_system(dt, eid, sprite, *, world):
 
     """
 
-    if not world.collidepoint(sprite.rect.center):
+    if not container.collidepoint(sprite.rect.center):
         ecs.remove_entity(eid)
 
 
