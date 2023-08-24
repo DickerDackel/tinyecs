@@ -343,7 +343,7 @@ def mouse_system(dt, eid, mouse, position):
 
 
 def scale_system(dt, eid, scale, momentum):
-    """Apply frictoin to a momentum.
+    """Apply friction to a momentum.
 
     In contrast to a force, which adds a directional vector to the momentum,
     the friction scales the momentum by a factor.  It can also be greater 1.
@@ -359,7 +359,7 @@ def sprite_system(dt, eid, sprite, position):
     """Set the rect.center of sprite to position."""
 
     if sprite.rect:
-        sprite.rect.center = position.xy
+        sprite.rect.center = position
     else:
         sprite.rect = sprite.image.get_rect(center=position)
 
@@ -389,7 +389,8 @@ def wsad_system(dt, eid, wsad, position):
     """
     keys = pygame.key.get_pressed()
 
-    v = Vector2()
+    v = Vector2(0, 0)
+
     # Yes, I know, pep8...
     if keys[pygame.K_w]: v.y -= 1
     if keys[pygame.K_s]: v.y += 1
