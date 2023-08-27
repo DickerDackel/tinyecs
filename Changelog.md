@@ -1,3 +1,8 @@
+# v0.2.5
+- The interface to deadzone_system was b0rken
+- typos and clarifications
+- Merge branch 'main' of https://github.com/dickerdackel/tinyecs
+
 # v0.2.4
 
 - Friction system added

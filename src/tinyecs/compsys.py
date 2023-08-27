@@ -39,12 +39,17 @@ class ESprite(pygame.sprite.Sprite):
     def __init__(self, *groups, tag=None, image=None):
         super().__init__(*groups)
 
+        self.tag = tag if tag else id(self)
+
         if image is None:
             self.image = pygame.surface.Surface((1, 1))
         else:
             self.image = image
 
         self.rect = self.image.get_rect(bottomright=(-1, -1))
+
+    def __repr__(self):
+        return f'{self.tag}: {self.image}  {self.rect}'
 
     def shutdown_(self):
         self.kill()
@@ -234,7 +239,7 @@ def dead_system(dt, eid, dead):
     ecs.remove_entity(eid)
 
 
-def deadzone_system(dt, eid, container, position):
+def deadzone_system(dt, eid, world, position, *, container):
     """Kill entities moving outside defined boundaries
 
     To avoid sprites flying off to infinity, a dead zone can be defined, that
@@ -245,11 +250,15 @@ def deadzone_system(dt, eid, container, position):
 
     Parameters
     ----------
-    container : pygame.rect.Rect
-        The boundaries within entities stay alive.
+    world: bool
+        Just a flag to identify entities that the deadzone should be applied to.
 
     position : pygame.math.Vector2
         The location of the entity.
+
+    container : pygame.rect.Rect
+        The boundaries within entities stay alive.
+        E.g. SCREEN.scale_by(1.25)
 
     Returns
     -------
@@ -257,35 +266,6 @@ def deadzone_system(dt, eid, container, position):
 
     """
     if not container.collidepoint(position):
-        ecs.remove_entity(eid)
-
-
-def sprite_world_system(dt, eid, sprite, world, *, container):
-    """Limit a sprite to a world rect.
-
-    This is similar to `deadzone_system`, except it doesn't work on
-    `container` and `position` components, but on a sprite and a `world`
-    kwarg.
-
-    Parameters
-    ----------
-    sprite: pygame.sprite.Sprite
-        The sprite component to check.
-
-    world: bool
-        No functionality, just used for targeting sprites.
-
-    container: pygame.rect.Rect
-        The container where the sprite can live.  If the `sprite.rect.center`
-        is outside, the sprite entity gets removed.
-
-    Returns
-    -------
-    None
-
-    """
-
-    if not container.collidepoint(sprite.rect.center):
         ecs.remove_entity(eid)
 
 
