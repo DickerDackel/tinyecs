@@ -160,23 +160,39 @@ def remove_entity(eid):
 
 
 def add_component(eid, cid, comp):
-    """add a component to the registry
+    """Add a component to the registry.
 
-        add_component(eid, cid, comp) -> None
+    Parameters
+    ----------
+    eid: hashable
+        The entity id to add the component to
 
-    Arguments:
+    cid: hashable
+        An identifier for the component This will be used to assign systems to
+        entities
 
-        eid         The entity id to add the component to
-        cid         An identifier for the component
-                    This will be used to assign systems to entities
-        comp        The actual data object
-                    A comp can be anything that holds data, just a string, e.g.
-                    a name, a SimpleNamespace, a dataclass, ...
+    comp: *
+        The actual data object A comp can be anything that holds data, just a
+        string, e.g. a name, a SimpleNamespace, a dataclass, ...
 
-        Note, that technically, there is no reason a comp object couldn't have
+        Note: Technically, there is no reason a comp object couldn't have
         methods, but by concept, functionality is reserved for the System
         working on the components, not the component itself.
-    Long description
+
+    ignore_missing: bool = False
+        Don't raise UnknownEntityError when the entity is no longer available
+
+    Returns
+    -------
+    cid: hashable
+        The `cid` that was put in as an argument.
+
+    Raises
+    ------
+    UnknownEntityError
+        If the `eid` doesn't exist in the registry and `ignore_missing` is
+        False (default)
+
     """
     global eidx, cidx, oidx
 
@@ -292,16 +308,6 @@ def remove_system_from_domain(domain, system):
         pass
 
 
-def is_eid(eid):
-    """check if the eid is valid.
-
-    Note: It is not discouraged to directly look into the ecs index.  This is
-    just to also provide a proper function if you don't want to dive into the
-    internals.
-    """
-    return eid in eidx
-
-
 def has(eid):
     """Check if eid is valid.
 
@@ -320,6 +326,10 @@ def has(eid):
 
     """
     return eid in eidx
+
+
+is_eid = has
+is_eid.__doc__ = """For backward compatibility.  Use `tinyecs.has(eid)` instead."""
 
 
 def eid_has(eid, *cids):
