@@ -312,6 +312,22 @@ def test_shutdown():
     assert shutdown_successful
 
 
+def test_cid_of_comp():
+    ecs.reset()
+    eid = ecs.create_entity()
+
+    cid = ecs.add_component(eid, 'testing', 'Lorem ipsum')
+    assert ecs.cid_of_comp(eid, 'Lorem ipsum') == cid
+
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.cid_of_comp(0, 'Lorem ipsum')
+    assert 'not registered' in str(e.value)
+
+    with pytest.raises(ecs.UnknownComponentError) as e:
+        ecs.cid_of_comp(eid, 'wrong comp')
+    assert 'not found in entity' in str(e.value)
+
+
 def test_healthcheck():
     def _setup():
         ecs.reset()

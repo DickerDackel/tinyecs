@@ -439,6 +439,50 @@ def eid_of_comp(comp):
     return oidx[id(comp)]
 
 
+def cid_of_comp(eid, comp):
+    """Get the cid of a component.
+
+    A system only receives an actual component, but cannot know under which
+    name this was targetted.  This function searches the cid of the given
+    component.
+
+    Note: This is a relatively expensive operation, but since it will mostly
+    be used to clean up old connections between entities, it should be a
+    one-shot and worth the price.
+
+    Parameters
+    ----------
+    eid: hashable
+        The entity ID
+
+    comp: object
+        The component to identify
+
+    Returns
+    -------
+    hashable
+        The cid that the given component was added under.
+
+    Raises
+    ------
+    UnknownEntityError
+        If the entity is not registered (anymore).
+
+    UnknownComponentError
+        If the passed component couldn't be found.
+
+    """
+    if not has(eid):
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
+    cids = cids_of_eid(eid)
+    for cid in cids:
+        if eidx[eid][cid] is comp:
+            return cid
+
+    raise UnknownComponentError(f'Component {comp} not found in entity {eid}')
+
+
 def run_system(dt, fkt, *cids, **kwargs):
     """run the system for the matching cids
 
