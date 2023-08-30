@@ -1,3 +1,10 @@
+# v0.2.6
+- Removed double function is_eid
+- Fix for pygame.transform.rotozoom changing the surface type
+- New function cid_of_comp
+- Merge branch 'main' of https://github.com/dickerdackel/tinyecs
+- The interface to deadzone_system was b0rken
+
 # v0.2.5
 - The interface to deadzone_system was b0rken
 - typos and clarifications
