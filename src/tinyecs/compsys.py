@@ -187,9 +187,24 @@ class RSAImage:
                                        scale=round(self._scale, 2),
                                        alpha=int(self._alpha))
         else:
-            image = pygame.transform.rotozoom(self._base_image,
-                                              self._rotate,
-                                              self._scale)
+            # Looks as if rotozoom is buggy and loses the surface flags, so
+            # until that is fixed, below block needs to be used instead of
+            # this:
+            # image = pygame.transform.rotozoom(self._base_image,
+            #                                   self._rotate,
+            #                                   self._scale)
+            #
+            if self._rotate != 0 and self._scale != 1:
+                image = pygame.transform.scale(
+                    pygame.transform.rotate(self._base_image, self._rotate),
+                    self._scale)
+            elif self._rotate != 0:
+                image = pygame.transform.rotate(self._base_image, self._rotate)
+            elif self._scale != 1:
+                image = pygame.transform.smoothscale(self._base_image, (self._scale, self._scale))
+            else:
+                image = self._base_image.copy()
+
             image.set_alpha(self._alpha)
         return image
 
