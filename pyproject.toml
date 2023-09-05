@@ -1,7 +1,7 @@
 [project]
 name = "tinyecs"
 description = "The teeniest, tiniest ECS system"
-version = "0.2.6"
+version = "0.2.7"
 readme = "README.md"
 
 authors = [

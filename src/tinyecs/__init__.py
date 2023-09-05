@@ -38,6 +38,7 @@ cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
 oidx = {}  # object index
+archetype = {}
 
 
 class UnknownEntityError(KeyError):
@@ -49,6 +50,10 @@ class UnknownComponentError(KeyError):
 
 
 class UnknownSystemError(KeyError):
+    pass
+
+
+class UnknownArchetypeError(KeyError):
     pass
 
 
@@ -73,6 +78,7 @@ def reset():
     sidx.clear()
     didx.clear()
     oidx.clear()
+    archetype.clear()
 
 
 def healthcheck():
@@ -155,6 +161,8 @@ def remove_entity(eid):
     except KeyError:
         return
 
+    remove_from_archetype(eid)
+
     remove_component(eid, *cids)
     del eidx[eid]
 
@@ -179,9 +187,6 @@ def add_component(eid, cid, comp):
         methods, but by concept, functionality is reserved for the System
         working on the components, not the component itself.
 
-    ignore_missing: bool = False
-        Don't raise UnknownEntityError when the entity is no longer available
-
     Returns
     -------
     cid: hashable
@@ -190,8 +195,7 @@ def add_component(eid, cid, comp):
     Raises
     ------
     UnknownEntityError
-        If the `eid` doesn't exist in the registry and `ignore_missing` is
-        False (default)
+        If the `eid` doesn't exist in the registry.
 
     """
     global eidx, cidx, oidx
@@ -205,6 +209,8 @@ def add_component(eid, cid, comp):
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
     oidx[id(comp)] = eid
+
+    add_to_archetype(eid)
 
     return cid
 
@@ -231,6 +237,8 @@ def remove_component(eid, *cids):
     zero parameter functions to be called in order.
     """
     for cid in cids:
+        remove_from_archetype(eid, cid)
+
         # Ignore unknown cids or eids since we're removing anyways
         # Also, no need to try each on their own
         try:
@@ -245,8 +253,8 @@ def remove_component(eid, *cids):
                 obj.shutdown_()
 
 
-def add_system(fkt, *comps):
-    """Add a system for the specifiied comps
+def add_system(fkt, *cids):
+    """Add a system for the specifiied cids
 
         add_system(fkt, *cids) -> None
 
@@ -266,8 +274,13 @@ def add_system(fkt, *comps):
 
     This function is called for every entity that matches all specified
     component ids.
+
+    Note
+    ----
+    Registering a system automatically creates an `archetype` from the given `cids`
     """
-    sidx[fkt] = comps
+    create_archetype(*cids)
+    sidx[fkt] = cids
 
 
 def remove_system(fkt):
@@ -280,6 +293,11 @@ def remove_system(fkt):
         fkt		the system function it does
 
     Remove the match for this function from the registry
+
+    Note
+    ----
+    In contrast to `add_system`, an existing `archetype` is not automatically
+    removed.
     """
     for domain in didx:
         remove_system_from_domain(domain, fkt)
@@ -360,6 +378,10 @@ def eids_by_cids(*cids):
 
     """
     res = []
+    at = tuple(cids)
+    if at in archetype:
+        return comps_of_archetype(*cids)
+
     for e, have_comps in eidx.items():
         comps = []
         for c in cids:
@@ -511,11 +533,14 @@ def run_system(dt, fkt, *cids, **kwargs):
     This function is a direct call.  Alternatively, you can use add_system
     combined with run_all_systems below.
     """
-    res = {}
-    for e, comps in eids_by_cids(*cids):
-        res[e] = fkt(dt, e, *comps, **kwargs)
+    at = tuple(cids)
+    if at not in archetype:
+        create_archetype(*cids)
 
-    return res
+    adict = archetype[at]
+    # need to get call_list upfront, since kill_system could modify the dict
+    call_list = [(eid, *parms) for eid, parms in adict.items()]
+    return {eid: fkt(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
 def run_all_systems(dt):
@@ -550,3 +575,98 @@ def run_domain(dt, domain):
 
     return {fkt: run_system(dt, fkt, *sidx[fkt])
             for fkt in didx[domain]}
+
+
+def create_archetype(*cids):
+    """Create an archetype from the provided cids.
+
+    An archetype is a fixed combination of components.  Each time a component
+    is added or removed from an entity, that entity and its components are
+    added/removed from the archetype.
+
+    This removes the need to search through all entities for the matching cids
+    in favour of returning the finished list directly.
+
+    Since every system is usually run every frame, there are a *lot* of
+    searches, which is very expensive.
+
+    The cost to insert/remove an entity into/from the archetype is a rather
+    small operation that is only done when the entity is changed.
+
+    Note
+    ----
+    Archetypes are created automatically as soon as a system runs for the
+    first time.  Manually creating an archetype is only useful if a function
+    wishes to work on a set of entities outside the `run_system` framework.
+
+    Parameters
+    ----------
+    cids
+        The list of cids that define the archetype.
+
+        Note: Order is important, since the system relies on it.
+
+    Returns
+    -------
+    None
+
+    """
+    at = tuple(cids)
+    if at in archetype:
+        return
+
+    archetype[at] = {e: comps for e, comps in eids_by_cids(*cids)}
+
+
+def remove_archetype(cids):
+    """Remove an archetype from the system. (See `add_archetype`)"""
+    at = tuple(cids)
+    del archetype[at]
+
+
+def add_to_archetype(eid):
+    """Make sure, eid is registered with all appropriate archetypes."""
+    have_comps = set(cids_of_eid(eid))
+    for at in archetype:
+        s = set(at)
+        if s <= have_comps:
+            archetype[at][eid] = comps_of_eid(eid, *at)
+
+
+def remove_from_archetype(eid, cid=None):
+    """Make sure, eid is only registered with appropriate archetypes."""
+    for at, adict in archetype.items():
+        if eid in adict and (cid is None or cid in at):
+            del adict[eid]
+
+
+def comps_of_archetype(*cids):
+    """Return the given archetype.
+
+    Primarily used by `run_system`.
+    
+    Returns a list of tuples consisting of eid and components.
+
+    Parameters
+    ----------
+    cids
+        The cids that define the archetype.
+
+    Returns
+    -------
+    List[tuple[Hashable, list[object]]
+
+        A list of tuples of (eid, components)
+
+    Raises
+    ------
+    UnknownArchetypeError
+        If the given archetype doesn't exist.
+
+    """
+
+    at = tuple(cids)
+    if at not in archetype:
+        raise UnknownArchetypeError
+
+    return [(e, comps) for e, comps in archetype[at].items()]

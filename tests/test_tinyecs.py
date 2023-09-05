@@ -2,7 +2,6 @@ import pytest
 import re
 
 import tinyecs as ecs
-import tinyecs.compsys as ecsc
 
 from pgcooldown import Cooldown
 from contextlib import nullcontext as does_not_raise
@@ -245,7 +244,6 @@ def test_kill_from_system():
 
 
 def test_add_system_to_domain():
-    ecs.reset()
     setup()
     ecs.add_system(ping_system, 'ping')
     ecs.add_system_to_domain('infra', ping_system)
@@ -369,6 +367,39 @@ def test_healthcheck():
     assert 'Component in cidx is missing in eidx' in str(e.value)
 
 
+def test_create_archetype():
+    setup()
+
+    assert ('ping',) in ecs.archetype
+    assert ('name', 'health') in ecs.archetype
+
+
+def test_add_to_archetype():
+    # Also tests remove_from_archetype
+    setup()
+
+    def test_system(dt, eid, test):
+        pass
+
+    e = ecs.create_entity()
+    ecs.add_component(e, 'test', True)
+    ecs.run_system(0, test_system, 'test')
+    assert e in ecs.archetype[('test',)]
+
+    ecs.remove_component(e, 'test')
+    assert e not in ecs.archetype[('test',)]
+
+
+def test_comps_of_archetype():
+    e1, e2 = setup()
+
+    # [('player', [namespace(name='Ipsum'), Health(health=1000)])]
+    run_parms = ecs.comps_of_archetype('name', 'health')
+    assert len(run_parms) == 1
+    assert run_parms[0][0] == 'player'
+    assert len(run_parms[0][1]) == 2
+
+
 if __name__ == '__main__':
     test_entity_creation()
     test_add_component()
@@ -392,3 +423,6 @@ if __name__ == '__main__':
     test_eid_has()
     test_shutdown()
     test_healthcheck()
+    test_create_archetype()
+    test_add_to_archetype()
+    test_comps_of_archetype()

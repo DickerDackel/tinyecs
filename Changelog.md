@@ -1,3 +1,10 @@
+# v0.2.7
+- v0.2.7
+- Archetypes!
+- More test objects, better readable output
+- FPS in titlebar and release boxes on mouseclick
+- Just standardized the FPS display in the titlebar
+
 # v0.2.6
 - Removed double function is_eid
 - Fix for pygame.transform.rotozoom changing the surface type
