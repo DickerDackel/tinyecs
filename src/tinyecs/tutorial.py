@@ -7,8 +7,11 @@ This tutorial is also available by running
 pydoc tinyecs.tutorial
 ```
 
-The `tinyecs.tutorial.py` also includes the demo program that's created in
-this tutorial.
+The demo developed within this document can be run upfront with
+
+```py
+python -m tinyecs.tutorial
+```
 
 ## About
 
