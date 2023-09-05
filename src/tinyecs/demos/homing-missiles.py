@@ -153,6 +153,9 @@ def main():
 
     group = pygame.sprite.Group()
 
+    click = pygame.Font(None, 48).render('Click!', True, 'white')
+    click_rect = click.get_rect(center=SCREEN.center)
+
     create_mouse(group)
     target = create_target(group, SCREEN)
 
@@ -213,11 +216,16 @@ def main():
         ecs.run_system(dt, homing_missile_system, 'homing_missile', 'position', 'momentum')
         ecs.run_system(dt, fire_system, 'fire', 'position')
 
+        screen.blit(click, click_rect)
         group.draw(screen)
 
         pygame.display.flip()
         clock.tick(FPS)
-        pygame.display.set_caption(f'{TITLE} - time={pygame.time.get_ticks()/1000:.2f}  fps={clock.get_fps():.2f}')
+        runtime = pygame.time.get_ticks()/1000
+        fps = clock.get_fps()
+        sprites = len(group)
+
+        pygame.display.set_caption(f'{TITLE} - {runtime=:.2f}  {fps=:.2f}  {sprites=}')
 
     pygame.quit()
 

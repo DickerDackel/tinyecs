@@ -86,7 +86,11 @@ def main():
 
         pygame.display.flip()
         clock.tick(FPS)
-        pygame.display.set_caption(f'{TITLE} - time={pygame.time.get_ticks()/1000:.2f}  fps={clock.get_fps():.2f}')
+        runtime = pygame.time.get_ticks()/1000
+        fps = clock.get_fps()
+        entities = len(ecs.eidx)
+
+        pygame.display.set_caption(f'{TITLE} - {runtime=:.2f}  {fps=:.2f}  {entities=}')
 
     pygame.quit()
 
