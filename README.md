@@ -538,3 +538,83 @@ while running:
 
 pygame.quit()
 ```
+
+## Available components and systems
+
+Now that we've written 3 basic systems ourself, let's have a look at the
+pygame(-ce) components that are currently included with tinyecs.
+
+Please note that while tinyecs should be API stable by now, the bundled
+components in `tinyecs.compsys` are *not*.  I'm still trying to get a feel for
+some of the features I want and how I want to access them.
+
+Components and systems are only listed here.  Please check the embedded docs
+for details and look at the code to decide if you want to make use of these
+systems or if you'd rather roll your own.
+
+
+`class ESprite(pygame.sprite.Sprite)`:
+    A sprite class that already has a `shutdown_` method
+
+`class EVSprite(pygame.sprite.Sprite)`:
+    A sprite class where the image attribute is a property.  You can pass an
+    `image_factory` function to the init that will generate images when the
+    `group.draw` functions runs over it.
+
+`class RSAImage`:
+    A *R*otated, *S*caled and *A*lpha transparent image.
+
+    UNSTABLE!  DON'T RELY ON THIS YET!
+
+`def dead_system(dt, eid, dead)`:
+    Sometimes it is useful to not remove a sprite immediately from the system.
+    Instead, you can add a component tagged e.g. 'dead', and later reap all
+    entities marked with that tag.
+
+`def deadzone_system(dt, eid, world, position, *, container)`:
+
+    Basically the function created in this tutorial, with one addition.
+
+    Not every sprite is run through this system, only sprites that have a
+    `world` component.  That way, e.g. enemy sprites waiting off screen to be
+    activated will not get removed.
+
+    `world` can be anything, I usually make it a boolean, but the existence of
+    that component alone is sufficient.
+
+        ecs.add_component(e, 'world', True)
+
+`def extension_system(dt, eid, extension)`:
+    Will be removed.  tinyecs installs pgcooldown as a requirement and that
+    comes with the `CronD` class which does the same and more.
+
+`def force_system(dt, eid, force, momentum)`:
+    Applies (adds) a constant force to a momentum.
+
+`def lifetime_system(dt, eid, lifetime)`:
+    Kills the entity once lifetime has run out.  Expects `lifetime` to be an
+    instance of `pgcooldown.Cooldown`
+
+`def momentum_system(dt, eid, momentum, position)`:
+    The same as we wrote in the tutorial above.
+
+`def mouse_system(dt, eid, mouse, position)`:
+    Update a position component with the position of the mouse cursor.
+
+`def scale_system(dt, eid, scale, momentum)`:
+`def friction_system(dt, eid, scale, momentum)`:
+    Apply friction to a momentum.
+
+    In contrast to a force_system, which adds a directional vector to the
+    momentum, the friction scales the momentum by a factor.  It can also be
+    greater 1.
+
+    `friction_system` is an alias to `scale_system`.
+
+`def sprite_system(dt, eid, sprite, position)`:
+    The same as we wrote above, apply the position to `sprite.rect.center`.
+
+`def wsad_system(dt, eid, wsad, position)`:
+    An example system to control a playear with the `wsad` keys.
+    This was just a proof of concept, but I'm currently using it, so perhaps
+    it will stay.
