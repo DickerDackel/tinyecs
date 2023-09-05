@@ -552,6 +552,13 @@ Components and systems are only listed here.  Please check the embedded docs
 for details and look at the code to decide if you want to make use of these
 systems or if you'd rather roll your own.
 
+I usually import these together with tinyecs like this:
+
+```sh
+import tinyecs as ecs
+import tinyecs.compsys as ecsc
+```
+
 
 `class ESprite(pygame.sprite.Sprite)`:
     A sprite class that already has a `shutdown_` method

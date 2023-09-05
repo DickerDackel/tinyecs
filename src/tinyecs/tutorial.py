@@ -553,6 +553,14 @@ Components and systems are only listed here.  Please check the embedded docs
 for details and look at the code to decide if you want to make use of these
 systems or if you'd rather roll your own.
 
+I usually import these together with tinyecs like this:
+
+```sh
+import tinyecs as ecs
+import tinyecs.compsys as ecsc
+```
+
+
 `class ESprite(pygame.sprite.Sprite)`:
     A sprite class that already has a `shutdown_` method
 
@@ -564,7 +572,7 @@ systems or if you'd rather roll your own.
 `class RSAImage`:
     A *R*otated, *S*caled and *A*lpha transparent image.
 
-    UNSTABLE!  DO NOT RELY ON THIS YET!
+    UNSTABLE!  DON'T RELY ON THIS YET!
 
 `def dead_system(dt, eid, dead)`:
     Sometimes it is useful to not remove a sprite immediately from the system.
