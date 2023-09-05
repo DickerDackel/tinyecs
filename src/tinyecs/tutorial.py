@@ -1,3 +1,4 @@
+'''
 # tinyecs Tutorial
 
 This tutorial is also available by running 
@@ -535,3 +536,123 @@ while running:
 
 pygame.quit()
 ```
+'''
+
+import pygame
+import tinyecs as ecs
+
+from random import random, choice
+
+from pygame import Vector2
+from pygame.colordict import THECOLORS
+
+TITLE = 'pygame minimal template'
+SCREEN = pygame.Rect(0, 0, 1024, 768)
+FPS = 60
+DT_MAX = 3 / FPS
+
+# Make the world rect a bit larger than the screen, so sprites don't suddenly
+# disappear at the screen edge.  Note: rect.scale_by is a pygame-ce
+# addition.
+WORLD = SCREEN.scale_by(1.25)
+
+
+class DemoSprite(pygame.sprite.Sprite):
+    """Just a class that provides a basic image and the shutdown_ method"""
+    def __init__(self, *groups):
+        # Make sure, the sprite is properly initialized for sprite groups
+        super().__init__(*groups)
+
+        # Size is random between 8 and 32 pixels in both dimensions
+        w, h = random() * 24 + 8, random() * 24 + 8
+
+        # Just set up a basic pygame sprite instance
+        self.image = pygame.Surface((w, h))
+        self.image.fill(choice(list(THECOLORS)))
+
+        # Note that we don't set the position!
+        self.rect = self.image.get_rect()
+
+    def shutdown_(self):
+        # print(f'{self} removed from sprite groups')
+        self.kill()
+
+
+def create_box_entity(position, sprite_group):
+    """Create an entity with position, momentum and sprite components."""
+    # Give sprites a random speed between 0 and +/-50px/s
+    dx, dy = random() * 100 - 50, random() * 100 - 50
+
+    e = ecs.create_entity()
+    ecs.add_component(e, 'position', Vector2(position))
+    ecs.add_component(e, 'momentum', Vector2(dx, dy))
+    ecs.add_component(e, 'sprite', DemoSprite(sprite_group))
+
+
+def momentum_system(dt, eid, momentum, position):
+    """Add a delta time scaled momentum to the position."""
+    position += momentum * dt
+
+
+def sprite_position_system(dt, eid, sprite, position):
+    """Apply the position to the rect of the sprite for the sprite group"""
+    sprite.rect.center = position
+
+
+def deadzone_system(dt, eid, position, *, world):
+    """Kill sprites that move off screen"""
+    if world.collidepoint(position):
+        return
+    ecs.remove_entity(eid)
+
+
+def main():
+    pygame.init()
+    pygame.display.set_caption(TITLE)
+    screen = pygame.display.set_mode(SCREEN.size)
+    clock = pygame.time.Clock()
+    group = pygame.sprite.Group()
+
+    emitting = False
+    running = True
+    while running:
+        dt = min(clock.tick(FPS) / 1000.0, DT_MAX)
+
+        for e in pygame.event.get():
+            match e.type:
+                case pygame.QUIT:
+                    running = False
+
+                case pygame.MOUSEBUTTONDOWN if e.button == 1:
+                    emitting = True
+
+                case pygame.MOUSEBUTTONUP if e.button == 1:
+                    emitting = False
+
+                case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
+                    running = False
+
+        if emitting:
+            for _ in range(10):
+                create_box_entity(pygame.mouse.get_pos(), group)
+
+        ecs.run_system(dt, momentum_system, 'momentum', 'position')
+        ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
+        ecs.run_system(dt, sprite_position_system, 'sprite', 'position')
+
+        screen.fill('black')
+
+        group.draw(screen)
+
+        pygame.display.flip()
+        runtime = pygame.time.get_ticks() / 1000
+        fps = clock.get_fps()
+        sprites = len(group)
+
+        pygame.display.set_caption(f'{TITLE} - {runtime=:.2f}  {fps=:.2f}  {sprites=}')
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
