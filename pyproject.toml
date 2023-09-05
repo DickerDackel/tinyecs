@@ -20,6 +20,8 @@ dependencies = [
     "pgcooldown"
 ]
 
+[project.optional-dependencies]
+
 [project.scripts]
 tinyecs-demo = 'tinyecs.demo:main'
 
