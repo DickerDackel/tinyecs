@@ -11,7 +11,7 @@ if arg not in ['perfect', 'imperfect', 'mixed']:
 
 WIDTH = 800
 HEIGHT = 800
-ENTITY_AMOUNT = 1_000 * 4
+ENTITY_AMOUNT = 1_000 * 10
 
 # TODO: put entities as a list in entity_manager
 # Also make the component manager be kept as a reference in the system_manager

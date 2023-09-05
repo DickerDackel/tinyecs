@@ -17,5 +17,5 @@ for mode in ['perfect', 'imperfect', 'mixed']:
     for _ in range(5):
         times.append(run(mode))
 
-    print(f'{mean(times)=}  {median(times)=}  {stdev(times)=}')
+    print(f'{mean(times)=:f}  {median(times)=:f}  {stdev(times)=:f}')
     print()
