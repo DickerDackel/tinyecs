@@ -1,5 +1,7 @@
+# v0.2.8
+- Tutorial!
+
 # v0.2.7
-- v0.2.7
 - Archetypes!
 - More test objects, better readable output
 - FPS in titlebar and release boxes on mouseclick
