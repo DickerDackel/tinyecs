@@ -560,29 +560,29 @@ import tinyecs.compsys as ecsc
 ```
 
 
-### `class ESprite(pygame.sprite.Sprite)`
+### class ESprite(pygame.sprite.Sprite)
 
 A sprite class that already has a `shutdown_` method
 
-### `class EVSprite(pygame.sprite.Sprite)`
+### class EVSprite(pygame.sprite.Sprite)
 
 A sprite class where the image attribute is a property.  You can pass an
 `image_factory` function to the init that will generate images when the
 `group.draw` functions runs over it.
 
-### `class RSAImage`
+### class RSAImage
 
 A *R*otated, *S*caled and *A*lpha transparent image.
 
 UNSTABLE!  DON'T RELY ON THIS YET!
 
-### `def dead_system(dt, eid, dead)`
+### def dead_system(dt, eid, dead)
 
 Sometimes it is useful to not remove a sprite immediately from the system.
 Instead, you can add a component tagged e.g. 'dead', and later reap all
 entities marked with that tag.
 
-### `def deadzone_system(dt, eid, world, position, *, container)`
+### def deadzone_system(dt, eid, world, position, *, container)
 
 Basically the function created in this tutorial, with one addition.
 
@@ -597,29 +597,29 @@ that component alone is sufficient.
 ecs.add_component(e, 'world', True)
 ```
 
-### ~~`def extension_system(dt, eid, extension)`~~
+### ~~def extension_system(dt, eid, extension)~~
 
 Will be removed.  tinyecs installs pgcooldown as a requirement and that comes
 with the `CronD` class which does the same and more.
 
-### `def force_system(dt, eid, force, momentum)`
+### def force_system(dt, eid, force, momentum)
 
 Applies (adds) a constant force to a momentum.
 
-### `def lifetime_system(dt, eid, lifetime)`
+### def lifetime_system(dt, eid, lifetime)
 
 Kills the entity once lifetime has run out.  Expects `lifetime` to be an
 instance of `pgcooldown.Cooldown`
 
-### `def momentum_system(dt, eid, momentum, position)`
+### def momentum_system(dt, eid, momentum, position)
 
 The same as we wrote in the tutorial above.
 
-### `def mouse_system(dt, eid, mouse, position)`
+### def mouse_system(dt, eid, mouse, position)
 
 Update a position component with the position of the mouse cursor.
 
-### `def scale_system(dt, eid, scale, momentum)`, `def friction_system(dt, eid, scale, momentum)`:
+### def scale_system(dt, eid, scale, momentum) / def friction_system(dt, eid, scale, momentum)
 
 Apply friction to a momentum.
 
@@ -629,11 +629,11 @@ greater 1.
 
 `friction_system` is an alias to `scale_system`.
 
-### `def sprite_system(dt, eid, sprite, position)`
+### def sprite_system(dt, eid, sprite, position)
 
 The same as we wrote above, apply the position to `sprite.rect.center`.
 
-### `def wsad_system(dt, eid, wsad, position)`
+### def wsad_system(dt, eid, wsad, position)
 
 An example system to control a playear with the `wsad` keys. This was just a
 proof of concept, but I'm currently using it, so perhaps it will stay.
