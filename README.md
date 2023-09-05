@@ -561,67 +561,80 @@ import tinyecs.compsys as ecsc
 
 
 `class ESprite(pygame.sprite.Sprite)`:
-    A sprite class that already has a `shutdown_` method
+
+A sprite class that already has a `shutdown_` method
 
 `class EVSprite(pygame.sprite.Sprite)`:
-    A sprite class where the image attribute is a property.  You can pass an
-    `image_factory` function to the init that will generate images when the
-    `group.draw` functions runs over it.
+
+A sprite class where the image attribute is a property.  You can pass an
+`image_factory` function to the init that will generate images when the
+`group.draw` functions runs over it.
 
 `class RSAImage`:
-    A *R*otated, *S*caled and *A*lpha transparent image.
 
-    UNSTABLE!  DON'T RELY ON THIS YET!
+A *R*otated, *S*caled and *A*lpha transparent image.
+
+UNSTABLE!  DON'T RELY ON THIS YET!
 
 `def dead_system(dt, eid, dead)`:
-    Sometimes it is useful to not remove a sprite immediately from the system.
-    Instead, you can add a component tagged e.g. 'dead', and later reap all
-    entities marked with that tag.
+
+Sometimes it is useful to not remove a sprite immediately from the system.
+Instead, you can add a component tagged e.g. 'dead', and later reap all
+entities marked with that tag.
 
 `def deadzone_system(dt, eid, world, position, *, container)`:
 
-    Basically the function created in this tutorial, with one addition.
+Basically the function created in this tutorial, with one addition.
 
-    Not every sprite is run through this system, only sprites that have a
-    `world` component.  That way, e.g. enemy sprites waiting off screen to be
-    activated will not get removed.
+Not every sprite is run through this system, only sprites that have a `world`
+component.  That way, e.g. enemy sprites waiting off screen to be activated
+will not get removed.
 
-    `world` can be anything, I usually make it a boolean, but the existence of
-    that component alone is sufficient.
+`world` can be anything, I usually make it a boolean, but the existence of
+that component alone is sufficient.
 
-        ecs.add_component(e, 'world', True)
+```py
+ecs.add_component(e, 'world', True)
+```
 
 `def extension_system(dt, eid, extension)`:
-    Will be removed.  tinyecs installs pgcooldown as a requirement and that
-    comes with the `CronD` class which does the same and more.
+
+Will be removed.  tinyecs installs pgcooldown as a requirement and that comes
+with the `CronD` class which does the same and more.
 
 `def force_system(dt, eid, force, momentum)`:
-    Applies (adds) a constant force to a momentum.
+
+Applies (adds) a constant force to a momentum.
 
 `def lifetime_system(dt, eid, lifetime)`:
-    Kills the entity once lifetime has run out.  Expects `lifetime` to be an
-    instance of `pgcooldown.Cooldown`
+
+Kills the entity once lifetime has run out.  Expects `lifetime` to be an
+instance of `pgcooldown.Cooldown`
 
 `def momentum_system(dt, eid, momentum, position)`:
-    The same as we wrote in the tutorial above.
+
+The same as we wrote in the tutorial above.
 
 `def mouse_system(dt, eid, mouse, position)`:
-    Update a position component with the position of the mouse cursor.
+
+Update a position component with the position of the mouse cursor.
 
 `def scale_system(dt, eid, scale, momentum)`:
 `def friction_system(dt, eid, scale, momentum)`:
-    Apply friction to a momentum.
 
-    In contrast to a force_system, which adds a directional vector to the
-    momentum, the friction scales the momentum by a factor.  It can also be
-    greater 1.
+Apply friction to a momentum.
 
-    `friction_system` is an alias to `scale_system`.
+In contrast to a force_system, which adds a directional vector to the
+momentum, the friction scales the momentum by a factor.  It can also be
+greater 1.
+
+`friction_system` is an alias to `scale_system`.
 
 `def sprite_system(dt, eid, sprite, position)`:
-    The same as we wrote above, apply the position to `sprite.rect.center`.
+
+The same as we wrote above, apply the position to `sprite.rect.center`.
 
 `def wsad_system(dt, eid, wsad, position)`:
-    An example system to control a playear with the `wsad` keys.
-    This was just a proof of concept, but I'm currently using it, so perhaps
-    it will stay.
+
+An example system to control a playear with the `wsad` keys. This was just a
+proof of concept, but I'm currently using it, so perhaps it will stay.
