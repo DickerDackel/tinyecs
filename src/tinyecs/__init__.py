@@ -132,8 +132,6 @@ def create_entity(tag=None, components=None):
         **kwargs	A list of component-IDs and components
 
     """
-    global eidx, cidx
-
     eid = tag if tag else str(uuid4())
     eidx[eid] = {}
 
@@ -198,8 +196,6 @@ def add_component(eid, cid, comp):
         If the `eid` doesn't exist in the registry.
 
     """
-    global eidx, cidx, oidx
-
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
