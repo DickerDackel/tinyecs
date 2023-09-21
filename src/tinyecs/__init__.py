@@ -611,7 +611,7 @@ def create_archetype(*cids):
     if at in archetype:
         return
 
-    archetype[at] = {e: comps for e, comps in eids_by_cids(*cids)}
+    archetype[at] = dict(eids_by_cids(*cids))
 
 
 def remove_archetype(cids):
