@@ -32,7 +32,7 @@ def marquee_system(dt, eid, marquee, border, surface):
     marquee.t = (marquee.t + dt) % 1
     color = [int(c * 255) for c in colorsys.hsv_to_rgb(marquee.t, 1, 1)]
 
-    if marquee.delay.cold:
+    if marquee.delay.cold():
         marquee.delay.reset()
         marquee.deque.append((color, marquee.v0.copy(), marquee.v1.copy()))
 

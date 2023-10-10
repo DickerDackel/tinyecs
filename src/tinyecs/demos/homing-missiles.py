@@ -16,7 +16,7 @@ def dead_sprite_system(dt, eid, dead, sprite):
 
 
 def lifetime_sprite_system(dt, eid, lifetime, sprite):
-    if lifetime.hot:
+    if lifetime.hot():
         return
     sprite.kill()
     ecs.remove_entity(eid)
@@ -200,7 +200,7 @@ def main():
                 case pygame.MOUSEBUTTONUP if e.button == 3:
                     autofire = False
 
-        if autofire and autofire_cooldown.cold:
+        if autofire and autofire_cooldown.cold():
             for i in range(7):
                 homing_missile(target, e.pos, group)
 

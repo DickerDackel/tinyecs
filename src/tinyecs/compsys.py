@@ -307,7 +307,7 @@ def extension_system(dt, eid, extension):
     kill_list = []
     for e in extension:
         (cooldown, cid, comp) = e
-        if cooldown.cold:
+        if cooldown.cold():
             ecs.add_component(eid, cid, comp)
             kill_list.append(e)
 
@@ -325,7 +325,7 @@ def force_system(dt, eid, force, momentum):
 
 def lifetime_system(dt, eid, lifetime):
     """Kill an entity after a specified time"""
-    if lifetime.cold:
+    if lifetime.cold():
         ecs.remove_entity(eid)
 
 
