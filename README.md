@@ -8,7 +8,7 @@ pydoc tinyecs.tutorial
 
 The demo developed within this document can be run upfront with
 
-```py
+```sh
 python -m tinyecs.tutorial
 ```
 
@@ -101,7 +101,7 @@ makes e.g. sense for the player entity to be quickly accessible by using
 
 Entities are created and removed with
 
-```py
+```python
 eid = ecs.create_entity()  # gives you a uuid4 ID
 player = ecs.create_entity('player')  # gives you 'player' as ID
 
@@ -123,7 +123,7 @@ very general term, `cid` stuck with me and I always use it for this purpose.
 
 Components are added and removed to and from an entity like this:
 
-```py
+```python
 ecs.add_component(eid, 'tag', object)
 
 ecs.remove_component(eid, 'tag')
@@ -138,7 +138,7 @@ The ECS and the sprite group are two different systems.
 To deal with that issue, you can add a method `shutdown_` to your component,
 which will be called when the component is removed from the ECS.
 
-```py
+```python
 # Remove a instance of a pygame.sprite.Sprite subclass
 # from all sprite groups
 def shutdown_(self):
@@ -158,7 +158,7 @@ Imagine a saucer entity, with the components `sprite`, `position`, and
 `momentum`. It should appear on the screen at position (50, 50) and should fly
 diagonally across the screen until it disappears off-screen.
 
-```py
+```python
 eid = ecs.create_entity()
 ecs.add_component(eid, 'sprite', Sprite('saucer.jpg'))
 ecs.add_component(eid, 'position', pygame.Vector2(50, 50))
@@ -170,7 +170,7 @@ To apply the position to the rect of the sprite, a function `sprite_system`
 will be used.  To run e.g. the `momentum_system`, put the following into the
 game loop:
 
-``py
+```python
 ecs.run_system(dt, momentum_system, 'momentum', 'position')
 ```
 
@@ -180,7 +180,7 @@ deltatime `dt` and the entity ID into the `momentum_system` function.
 
 Writing the `momentum_system` is easy:
 
-```py
+```python
 def momentum_system(dt, eid, momentum, position):
     position += momentum * dt
 ```
@@ -196,7 +196,7 @@ function, and all additional keyword args from the `run_system` call will
 passed in after the components.  The following will be explained in the actual
 script later.
 
-```py
+```python
 ecs.run_system(dt, deadzone_system, 'position', deadzone=WORLD)
 ```
 
@@ -213,7 +213,7 @@ There are some alternatives still.
 1. you can register systems with the required cids at the start of your
 program and call a single function in your game loop:
 
-```py
+```python
 ecs.run_all_systems(dt)
 ```
 
@@ -222,7 +222,7 @@ concept of `domains` was introduced.  A system domain is simply a group of
 systems that are bundled under a common name.  We won't make use of that in
 this tutorial, please consult the embedded docs for more detail.
 
-```sh
+```python
 pydoc tinyecs.add_system_to_domain
 pydoc tinyecs.run_domain
 pydoc tinyecs.remove_system_from_domain
@@ -233,7 +233,7 @@ functionality in there, just create a short system that calls the update
 method of your component.  You still need that block of `run_system` or above
 shortcuts in your game loop though.
 
-```py
+```python
 def call_update_system(dt, eid, component):
     component.update(dt)
 ```
@@ -258,7 +258,7 @@ This is a basic pygame boilerplate game loop.  It could be shortened, but this
 is a good start for stateless test scripts and experiments.  It already has a
 sprite group added.
 
-```py
+```python
 import pygame
 
 TITLE = 'pygame minimal template'
@@ -302,7 +302,7 @@ pygame.quit()
 
 #### The sprite class:
 
-```py
+```python
 from random import random, choice
 from pygame.colordict import THECOLORS
 
@@ -331,7 +331,7 @@ class DemoSprite(pygame.sprite.Sprite):
 We define a function that creates the full entity.  If you're coming from OO,
 this mostly resembles the `__init__` of an entity class.
 
-```py
+```python
 from pygame import Vector2
 
 def create_box_entity(position):
@@ -351,7 +351,7 @@ spray of new sprites at the given mouse position.
 
 We already wrote the `momentum_system` above, but here again for completeness:
 
-```py
+```python
 # Make the world rect a bit larger than the screen, so sprites don't suddenly
 # disappear at the screen edge.  Note: rect.scale_by is a pygame-ce
 # addition.
@@ -376,7 +376,7 @@ def deadzone_system(dt, eid, position, *, world):
 
 The lines marked with `>` are additions to the game loop template all above.
 
-```py
+```python
 >   emitting = False
     running = True
     while running:
@@ -405,7 +405,7 @@ The lines marked with `>` are additions to the game loop template all above.
 
 #### Running the systems
 
-```py
+```python
 >   ecs.run_system(dt, momentum_system, 'momentum', 'position')
 >   ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
 >   ecs.run_system(dt, sprite_position_system, 'sprite', 'position')
@@ -425,7 +425,7 @@ Here's the full script with the functions, classes, imports above also merged
 in.  Additionally, a sprite counter was added to the title bar and the print
 from the `shutdown_` of the sprite class was commented out.
 
-```py
+```python
 import pygame
 import tinyecs as ecs
 
@@ -554,7 +554,7 @@ systems or if you'd rather roll your own.
 
 I usually import these together with tinyecs like this:
 
-```sh
+```python
 import tinyecs as ecs
 import tinyecs.compsys as ecsc
 ```
@@ -593,7 +593,7 @@ will not get removed.
 `world` can be anything, I usually make it a boolean, but the existence of
 that component alone is sufficient.
 
-```py
+```python
 ecs.add_component(e, 'world', True)
 ```
 
