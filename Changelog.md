@@ -1,3 +1,9 @@
+# v0.2.9
+- Follow API change in pgcooldown
+- Simplified archetype creation
+- global was bullshit there
+- Formatting fixes (hopefully)
+
 # v0.2.8
 - Tutorial!
 
