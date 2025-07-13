@@ -1,3 +1,7 @@
+# v0.2.10
+
+- Fixed docs
+
 # v0.2.9
 - Follow API change in pgcooldown
 - Simplified archetype creation
