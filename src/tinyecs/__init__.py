@@ -21,7 +21,7 @@ Workflow:
 
     alternatively
 
-    3. run_system(fkt, *cids)
+    3. run_system(dt, fkt, *cids)
        ...
 
 If a system needs to modify components of other entities, these entities e.g.
