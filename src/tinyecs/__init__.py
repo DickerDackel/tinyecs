@@ -31,6 +31,7 @@ use comps_of_eid(eid, *comps) for that.  This way, a bullet component can
 substract health from a player entity.
 """
 
+from collections import defaultdict
 from uuid import uuid4
 
 eidx = {}  # entity index
@@ -38,6 +39,7 @@ cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
 oidx = {}  # object index
+plist = defaultdict(set) # entity property lists
 archetype = {}
 
 
@@ -78,6 +80,7 @@ def reset():
     sidx.clear()
     didx.clear()
     oidx.clear()
+    plist.clear()
     archetype.clear()
 
 
@@ -511,31 +514,36 @@ def cid_of_comp(eid, comp):
     raise UnknownComponentError(f'Component {comp} not found in entity {eid}')
 
 
-def run_system(dt, fkt, *cids, **kwargs):
+def run_system(dt, fkt, *cids, has_property=None, **kwargs):
     """run the system for the matching cids
 
         run_system(dt, fkt, *cids) -> {eid: fkt(dt, eid, *comps), ...}
 
     Arguments:
 
-        dt		delta time since the last frame (miliseconds)
-        fkt     the actual system function
-        *cids   the components to run on
+        dt              delta time since the last frame (miliseconds)
+        fkt             the actual system function
+        *cids           the components to run on
+        has_property    set of required properties
 
     This function gets the list of all entities that contain the listed
-    components.  Then it runs the function for every entity and the requested
+    components.  The list can further be narrowed down my filtering for given
+    properties.  Then it runs the function for every entity and the requested
     components, passing dt as heartbeat.
 
     This function is a direct call.  Alternatively, you can use add_system
     combined with run_all_systems below.
     """
+
     at = tuple(cids)
     if at not in archetype:
         create_archetype(*cids)
 
+    property_filter = set() if has_property is None else set(has_property)
+
     adict = archetype[at]
     # need to get call_list upfront, since kill_system could modify the dict
-    call_list = [(eid, *parms) for eid, parms in adict.items()]
+    call_list = [(eid, *parms) for eid, parms in adict.items() if plist[eid] >= property_filter]
     return {eid: fkt(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
@@ -666,3 +674,12 @@ def comps_of_archetype(*cids):
         raise UnknownArchetypeError
 
     return [(e, comps) for e, comps in archetype[at].items()]
+
+def set_property(eid, prop):
+    plist[eid].add(prop)
+
+def has_property(eid, prop):
+    return prop in plist[eid]
+
+def remove_property(eid, prop):
+    plist[eid].remove(prop)
