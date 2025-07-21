@@ -1,3 +1,7 @@
+# v0.3.0
+
+- Properties!
+
 # v0.2.10
 
 - Fixed docs
