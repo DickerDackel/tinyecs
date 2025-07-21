@@ -108,7 +108,8 @@ player = ecs.create_entity('player')  # gives you 'player' as ID
 ecs.remove_entity(eid)
 ```
 
-If an entity is removed, all references to its components are also dropped, but...  See "IMPORTANT" below at "Components"
+If an entity is removed, all references to its components are also dropped,
+but...  See "IMPORTANT" below at "Components"
 
 #### Components
 
@@ -131,9 +132,11 @@ ecs.remove_component(eid, 'tag')
 
 IMPORTANT:
 
-An entity that e.g. has a sprite in a global sprite group cannot be released
-by the ECS, since it doesn't know anything about the interface of that sprite.
-The ECS and the sprite group are two different systems.
+A component might have references in structures outside the ECS.  Like e.g.
+you can put a `pygame` sprite into a sprite group.  If the entity is killed,
+all references to the component **inside the ECS** will be removed, but the
+ECS does not know about the sprite group, so the entity will be killed, but
+there's still the refernce inside the sprite group.
 
 To deal with that issue, you can add a method `shutdown_` to your component,
 which will be called when the component is removed from the ECS.
@@ -143,6 +146,57 @@ which will be called when the component is removed from the ECS.
 # from all sprite groups
 def shutdown_(self):
     self.kill()
+```
+
+#### Properties
+
+Properties are a new addition to tinyecs.  Until now, the only way to mark an
+entity to be of a specific type, or have a special feature, was to add a flag
+component, e.g.
+
+```python
+ecs.add_component(eid, 'is-drawable', True)
+```
+
+while not pretty, this does the job, but has the problem that you now need
+different systems for times when you do want to filter, and if you don't want
+to, since that flag component is added to the arguments of the system.
+
+To solve this, properties (as inspired by Lisp) have been added.  These are
+"flags" that live outside the component registry.  They will **not** be handed
+over to the system when used in `run_system`.
+
+You can add, remove, and check for them like this:
+
+```python
+ecs.set_property(eid, 'is-drawable')
+ecs.has_property(eid, 'is-drawable')  # --> True
+ecs.remove_property(eid, 'is-drawable')
+```
+
+The tinyecs functions that return multiple entities and components now support
+filtering by these properties.
+
+```python
+ecs.run_system(dt, 'position', 'sprite', has_properties{'is-drawable'})
+
+ecs.has(eid, has_properties={'is-sprite'})
+
+result = ecs.eids_by_cids('position', 'sprite',
+                          has_properties={'is-drawable'})
+
+result = ecs.comps_of_archetype('position', 'sprite',
+                                has_properties={'is-drawable', ...})
+```
+
+This way, e.g. sprites can now be layered by filtering for the different
+types:
+
+```python
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-enemy'))
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'bullet'))
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'fx'))
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'hud'))
 ```
 
 #### Systems
