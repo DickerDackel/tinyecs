@@ -3,8 +3,6 @@ import re
 
 import tinyecs as ecs
 
-from pgcooldown import Cooldown
-from contextlib import nullcontext as does_not_raise
 from dataclasses import dataclass
 from types import SimpleNamespace
 
@@ -32,7 +30,6 @@ class Ping:
 
 def wounding_system(dt, eid, health):
     health.health -= 100
-    print(f'\nhealth of {eid} is now {health.health}')
     return health.health
 
 
@@ -48,6 +45,9 @@ def move_system(dt, eid, pos, velocity):
     pos.x += velocity.dx * dt
     pos.y += velocity.dy * dt
     return (pos.x, pos.y)
+
+def flag_system(dt, eid, comp1, comp2):
+    ecs.add_component(eid, 'flag', True)
 
 
 UUID_RE = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
@@ -334,8 +334,6 @@ def test_healthcheck():
         return eid, cid
 
     eid, cid = _setup()
-    print(ecs.eidx)
-    print(ecs.cidx)
 
     del ecs.cidx[cid]
     with pytest.raises(ecs.RegistryError) as e:
@@ -399,6 +397,37 @@ def test_comps_of_archetype():
     assert run_parms[0][0] == 'player'
     assert len(run_parms[0][1]) == 2
 
+def test_properties():
+    ecs.create_entity('xyzzy', properties={'a', 'b'})
+    assert ecs.has_property('xyzzy', 'a')
+
+
+    for i in range(10):
+        eid = ecs.create_entity()
+        ecs.add_component(eid, 'comp-1', True)
+        ecs.add_component(eid, 'comp-2', True)
+        if i % 2 == 0:
+            ecs.set_property(eid, 'is-even')
+
+    ecs.set_property('xyzzy', 'is-xyzzy')
+    assert ecs.has_property('xyzzy', 'is-xyzzy')
+
+    assert ecs.has('xyzzy', has_properties={'is-xyzzy'})
+    ecs.remove_property('xyzzy', 'is-xyzzy')
+    assert not ecs.has('xyzzy', has_properties={'is-xyzzy'})
+
+    ecs.clear_properties('xyzzy')
+    assert len(ecs.plist['xyzzy']) == 0
+
+    assert len(ecs.eids_by_cids('comp-1', 'comp-2')) == 10
+    assert len(ecs.eids_by_cids('comp-1', 'comp-2', has_properties={'is-even'})) == 5
+
+    ecs.run_system(0, flag_system, 'comp-1', 'comp-2', has_properties={'is-even'})
+    assert len(ecs.eids_by_cids('flag')) == 5
+
+    assert len(ecs.comps_of_archetype('comp-1', 'comp-2')) == 10
+    assert len(ecs.comps_of_archetype('comp-1', 'comp-2', has_properties={'is-even'})) == 5
+
 
 if __name__ == '__main__':
     test_entity_creation()
@@ -422,7 +451,9 @@ if __name__ == '__main__':
     test_is_eid()
     test_eid_has()
     test_shutdown()
+    test_cid_of_comp()
     test_healthcheck()
     test_create_archetype()
     test_add_to_archetype()
     test_comps_of_archetype()
+    test_properties()

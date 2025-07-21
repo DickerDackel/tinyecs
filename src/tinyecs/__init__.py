@@ -60,11 +60,12 @@ class UnknownArchetypeError(KeyError):
 
 
 class RegistryError(RuntimeError):
-    def __init__(self, error, eid, cid, component, other=None):
+    def __init__(self, error, *, eid, cid, component, properties=None, other=None):
         self.error = error
         self.eid = eid
         self.cid = cid
         self.component = component
+        self.properties = properties
         self.other = other
 
 
@@ -119,11 +120,15 @@ def healthcheck():
                 raise RegistryError('Entity in cidx is missing in eidx', eid=eid, cid=cid, component=cidx[cid][eid])
             if cid not in eidx[eid]:
                 raise RegistryError('Component in cidx is missing in eidx', eid=eid, cid=cid, component=cidx[cid][eid])
+    for eid in plist:
+        if eid not in eidx:
+            raise RegistryError('Unknown entity in property list', eid=eid, properties=plist[eid])
+        ...  # FIXME
 
     return True
 
 
-def create_entity(tag=None, components=None):
+def create_entity(tag=None, components=None, properties=None):
     """Create a new entity
 
         create_entity(tag=None, **kwargs) --> entity_id
@@ -132,7 +137,8 @@ def create_entity(tag=None, components=None):
         tag         an optional ID for the entity, e.g. "player"
                     if no tag is passed, a uuid is generated
 
-        **kwargs	A list of component-IDs and components
+        components  A list of components
+        properties  A list of properties
 
     """
     eid = tag if tag else str(uuid4())
@@ -141,6 +147,9 @@ def create_entity(tag=None, components=None):
     # Add optionally passed components
     if components:
         add_components(eid, components)
+
+    if properties:
+        set_properties(eid, properties)
 
     return eid
 
@@ -161,10 +170,13 @@ def remove_entity(eid):
         cids = eidx[eid].keys()
     except KeyError:
         return
+    remove_component(eid, *cids)
 
     remove_from_archetype(eid)
 
-    remove_component(eid, *cids)
+    if eid in plist:
+        del plist[eid]
+
     del eidx[eid]
 
 
@@ -325,7 +337,7 @@ def remove_system_from_domain(domain, system):
         pass
 
 
-def has(eid):
+def has(eid, has_properties=None):
     """Check if eid is valid.
 
     There is no reason to not use `eid in tinyecs.eidx`.  This is just for
@@ -336,13 +348,20 @@ def has(eid):
     eid
         The entity to verify
 
+    has_properties
+        Optional set of required properties
+
     Returns
     -------
     bool
         True if the eid is valid
 
     """
-    return eid in eidx
+    if has_properties is None:
+        return eid in eidx
+    else:
+        property_filter = set(has_properties)
+        return eid in eidx and property_filter <= plist[eid]
 
 
 is_eid = has
@@ -366,7 +385,7 @@ def eid_has(eid, *cids):
     return True
 
 
-def eids_by_cids(*cids):
+def eids_by_cids(*cids, has_properties=None):
     """get eids that match all specified cids
 
         eids_by_cid(*cids) -> [(eid, comps), ...]
@@ -375,13 +394,22 @@ def eids_by_cids(*cids):
 
         *cids		All component ids that need to match
 
+        has_properties
+            Optional set of required properties
+
     """
     res = []
     at = tuple(cids)
     if at in archetype:
-        return comps_of_archetype(*cids)
+        return comps_of_archetype(*cids, has_properties=has_properties)
+
+    if has_properties:
+        property_filter = set(has_properties)
 
     for e, have_comps in eidx.items():
+        if has_properties and not property_filter <= plist[e]:
+            continue
+
         comps = []
         for c in cids:
             if c in have_comps:
@@ -514,7 +542,7 @@ def cid_of_comp(eid, comp):
     raise UnknownComponentError(f'Component {comp} not found in entity {eid}')
 
 
-def run_system(dt, fkt, *cids, has_property=None, **kwargs):
+def run_system(dt, fkt, *cids, has_properties=None, **kwargs):
     """run the system for the matching cids
 
         run_system(dt, fkt, *cids) -> {eid: fkt(dt, eid, *comps), ...}
@@ -524,7 +552,7 @@ def run_system(dt, fkt, *cids, has_property=None, **kwargs):
         dt              delta time since the last frame (miliseconds)
         fkt             the actual system function
         *cids           the components to run on
-        has_property    set of required properties
+        has_properties  set of required properties
 
     This function gets the list of all entities that contain the listed
     components.  The list can further be narrowed down my filtering for given
@@ -539,11 +567,16 @@ def run_system(dt, fkt, *cids, has_property=None, **kwargs):
     if at not in archetype:
         create_archetype(*cids)
 
-    property_filter = set() if has_property is None else set(has_property)
-
     adict = archetype[at]
     # need to get call_list upfront, since kill_system could modify the dict
-    call_list = [(eid, *parms) for eid, parms in adict.items() if plist[eid] >= property_filter]
+    # Also: not running in the if clause is vastly faster than checking an
+    # empty set.
+    if has_properties:
+        property_filter = set(has_properties)
+        call_list = [(eid, *parms) for eid, parms in adict.items()
+                     if property_filter <= plist[eid]]
+    else:
+        call_list = [(eid, *parms) for eid, parms in adict.items()]
     return {eid: fkt(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
@@ -644,17 +677,20 @@ def remove_from_archetype(eid, cid=None):
             del adict[eid]
 
 
-def comps_of_archetype(*cids):
+def comps_of_archetype(*cids, has_properties=None):
     """Return the given archetype.
 
     Primarily used by `run_system`.
-    
+
     Returns a list of tuples consisting of eid and components.
 
     Parameters
     ----------
     cids
         The cids that define the archetype.
+
+    has_properties
+        Optional set of required properties
 
     Returns
     -------
@@ -673,13 +709,84 @@ def comps_of_archetype(*cids):
     if at not in archetype:
         raise UnknownArchetypeError
 
-    return [(e, comps) for e, comps in archetype[at].items()]
+    if has_properties:
+        property_filter = set(has_properties)
+        return [(e, comps)
+                for e, comps in archetype[at].items()
+                if property_filter <= plist[e]]
+    else:
+        return [(e, comps) for e, comps in archetype[at].items()]
 
-def set_property(eid, prop):
-    plist[eid].add(prop)
+
+def set_property(eid, property):
+    """Add a property to the given entity.
+
+    Parameters
+    ----------
+    eid: hashable
+        The entity id to add the component to
+
+    property: hashable
+        A flag or tag that can be filtered, e.g. 'is_drawable'
+
+    Returns
+    -------
+    None
+
+    """
+    plist[eid].add(property)
+
+def set_properties(eid, properties):
+    for prop in properties:
+        set_property(eid, prop)
 
 def has_property(eid, prop):
+    """Checks if the given entity has that property.
+
+    Parameters
+    ----------
+    eid: hashable
+        The entity id to add the component to
+
+    property: hashable
+        The property to check for
+
+    Returns
+    -------
+    bool
+
+    """
     return prop in plist[eid]
 
 def remove_property(eid, prop):
+    """Removes a property from the given entity.
+
+    Parameters
+    ----------
+    eid: hashable
+        The entity id to add the component to
+
+    property: hashable
+        The property to remove
+
+    Returns
+    -------
+    None
+
+    """
     plist[eid].remove(prop)
+
+def clear_properties(eid):
+    """Removes all properties from the given entity.
+
+    Parameters
+    ----------
+    eid: hashable
+        The entity id to add the component to
+
+    Returns
+    -------
+    None
+
+    """
+    plist[eid] = set()
