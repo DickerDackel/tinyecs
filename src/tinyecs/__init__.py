@@ -790,3 +790,19 @@ def clear_properties(eid):
 
     """
     plist[eid] = set()
+
+
+def eids_by_property(*properties):
+    """get eids that match all specified properties
+
+        eids_by_property(*properties) -> [eid, ...]
+
+    Arguments:
+
+        *properties		All properties that need to match
+
+    """
+
+    property_filter = set(properties)
+
+    return [eid for eid, props in plist.items() if property_filter <= props]

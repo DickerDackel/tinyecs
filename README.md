@@ -199,6 +199,13 @@ ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'fx'))
 ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'hud'))
 ```
 
+Finally, properties can be searched directly, e.g. to prune dead entities:
+
+```python
+for eid in ecs.eid_by_property('is-dead'):
+    ecs.remove_entity(eid)
+```
+
 #### Systems
 
 Different from writing OO, the component itself doesn't have any code (in the
