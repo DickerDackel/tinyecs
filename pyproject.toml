@@ -11,10 +11,12 @@ authors = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries :: pygame",
 ]
+
+license = "MIT"
+license-files = ["LICENSE"]
 
 dependencies = [
     "pgcooldown"
