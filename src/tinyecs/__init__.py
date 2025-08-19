@@ -39,7 +39,7 @@ cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
 oidx = {}  # object index
-plist = defaultdict(set) # entity property lists
+plist = defaultdict(set)  # entity property lists
 archetype = {}
 
 
@@ -702,7 +702,6 @@ def comps_of_archetype(*cids, has_properties=None):
     ------
     UnknownArchetypeError
         If the given archetype doesn't exist.
-
     """
 
     at = tuple(cids)
@@ -734,11 +733,14 @@ def set_property(eid, property):
     None
 
     """
+
     plist[eid].add(property)
+
 
 def set_properties(eid, properties):
     for prop in properties:
         set_property(eid, prop)
+
 
 def has_property(eid, prop):
     """Checks if the given entity has that property.
@@ -758,6 +760,7 @@ def has_property(eid, prop):
     """
     return prop in plist[eid]
 
+
 def remove_property(eid, prop):
     """Removes a property from the given entity.
 
@@ -775,6 +778,7 @@ def remove_property(eid, prop):
 
     """
     plist[eid].remove(prop)
+
 
 def clear_properties(eid):
     """Removes all properties from the given entity.
