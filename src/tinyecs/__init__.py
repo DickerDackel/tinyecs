@@ -694,7 +694,7 @@ def comps_of_archetype(*cids, has_properties=None):
 
     Returns
     -------
-    List[tuple[Hashable, list[object]]
+    List[tuple[Hashable, list[object]]]
 
         A list of tuples of (eid, components)
 
