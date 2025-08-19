@@ -169,13 +169,16 @@ def remove_entity(eid):
     try:
         cids = eidx[eid].keys()
     except KeyError:
-        return
-    remove_component(eid, *cids)
+        pass
+    else:
+        remove_component(eid, *cids)
+
+    try:
+        del plist[eid]
+    except KeyError:
+        pass
 
     remove_from_archetype(eid)
-
-    if eid in plist:
-        del plist[eid]
 
     del eidx[eid]
 
