@@ -455,6 +455,17 @@ def test_property_clear():
     assert len(ecs.plist['xyzzy']) == 0
 
 
+def test_property_purge():
+    setup_property_tests()
+
+    ecs.purge_by_property('is-even')
+    assert len(ecs.eids_by_property('is-even')) == 0
+
+    ecs.purge_by_property('a', 'b')
+    assert len(ecs.eids_by_property('a')) == 0
+    assert len(ecs.eids_by_property('b')) == 0
+
+
 if __name__ == '__main__':
     test_entity_creation()
     test_add_component()

@@ -180,7 +180,10 @@ def remove_entity(eid):
 
     remove_from_archetype(eid)
 
-    del eidx[eid]
+    try:
+        del eidx[eid]
+    except KeyError:
+        pass
 
 
 def add_component(eid, cid, comp):
@@ -800,7 +803,7 @@ def clear_properties(eid):
 
 
 def eids_by_property(*properties):
-    """get eids that match all specified properties
+    """get eids that match all given properties
 
         eids_by_property(*properties) -> [eid, ...]
 
@@ -813,3 +816,20 @@ def eids_by_property(*properties):
     property_filter = set(properties)
 
     return [eid for eid, props in plist.items() if property_filter <= props]
+
+
+def purge_by_property(*properties):
+    """purge entities that match all given properties
+
+        purge_by_property(*properties) -> None
+
+    Arguments:
+
+        *properties		All properties that need to match
+
+    This is useful to clean up all entities belonging to a sub state without
+    impacting the remaining registry.
+    """
+
+    for eid in eids_by_property(*properties):
+        remove_entity(eid)
