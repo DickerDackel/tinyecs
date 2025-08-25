@@ -394,6 +394,7 @@ def test_comps_of_archetype():
     assert run_parms[0][0] == 'player'
     assert len(run_parms[0][1]) == 2
 
+
 def setup_property_tests():
     ecs.reset()
     ecs.create_entity('xyzzy', properties={'a', 'b'})
@@ -404,6 +405,7 @@ def setup_property_tests():
         ecs.add_component(eid, 'comp-2', True)
         if i % 2 == 0:
             ecs.set_property(eid, 'is-even')
+
 
 def test_property_add_check_remove():
     setup_property_tests()
@@ -416,6 +418,7 @@ def test_property_add_check_remove():
     ecs.remove_property('xyzzy', 'is-xyzzy')
     assert not ecs.has_property('xyzzy', 'is-xyzzy')
 
+
 def test_property_has():
     setup_property_tests()
 
@@ -424,11 +427,13 @@ def test_property_has():
     ecs.remove_property('xyzzy', 'is-xyzzy')
     assert not ecs.has('xyzzy', has_properties={'is-xyzzy'})
 
+
 def test_property_get_entities():
     setup_property_tests()
 
     assert len(ecs.eids_by_cids('comp-1', 'comp-2')) == 10
     assert len(ecs.eids_by_cids('comp-1', 'comp-2', has_properties={'is-even'})) == 5
+
 
 def test_property_run_system():
     setup_property_tests()
@@ -439,14 +444,17 @@ def test_property_run_system():
     ecs.run_system(0, flag_system, 'comp-1', 'comp-2', has_properties={'is-even'})
     assert len(ecs.eids_by_cids('flag')) == 5
 
+
 def test_property_archetype():
     assert len(ecs.comps_of_archetype('comp-1', 'comp-2')) == 10
     assert len(ecs.comps_of_archetype('comp-1', 'comp-2', has_properties={'is-even'})) == 5
+
 
 def test_property_find_entities():
     setup_property_tests()
 
     assert len(ecs.eids_by_property('is-even')) == 5
+
 
 def test_property_clear():
     setup_property_tests()
