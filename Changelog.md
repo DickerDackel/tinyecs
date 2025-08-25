@@ -1,3 +1,8 @@
+# v0.3.1
+
+- New function `purge_by_property`
+- linter fixes, slight optimizations
+
 # v0.3.0
 
 - Properties!
