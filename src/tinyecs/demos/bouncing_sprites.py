@@ -1,7 +1,7 @@
 import pygame
 import tinyecs as ecs
 
-import tinyecs.components as ecsc
+import tinyecs.compsys as ecsc
 
 from random import random, randint
 from pygame import Vector2
@@ -88,7 +88,7 @@ def main():
 
                 case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
                     running = False
-                case pygame.KEYDOWN if pygame.K_SPACE:
+                case pygame.KEYDOWN if e.key == pygame.K_SPACE:
                     create_a_bunch(group, SCREEN)
 
         if emit:

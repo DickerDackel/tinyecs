@@ -53,7 +53,7 @@ def main():
     clock = pygame.time.Clock()
     pygame.mouse.set_visible(False)
 
-    ecs.add_system('marquee', 'border', 'surface')
+    ecs.add_system(marquee_system, 'marquee', 'border', 'surface')
 
     e = ecs.create_entity()
     ecs.add_component(e, 'marquee', SimpleNamespace(v0=Vector2(random() * SCREEN.width, random() * SCREEN.height),

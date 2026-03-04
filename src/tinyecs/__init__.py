@@ -122,8 +122,7 @@ def healthcheck():
                 raise RegistryError('Component in cidx is missing in eidx', eid=eid, cid=cid, component=cidx[cid][eid])
     for eid in plist:
         if eid not in eidx:
-            raise RegistryError('Unknown entity in property list', eid=eid, properties=plist[eid])
-        ...  # FIXME
+            raise RegistryError('Unknown entity in property list', eid=eid, cid=None, component=None, properties=plist[eid])
 
     return True
 
