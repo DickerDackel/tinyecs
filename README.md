@@ -178,7 +178,7 @@ The tinyecs functions that return multiple entities and components now support
 filtering by these properties.
 
 ```python
-ecs.run_system(dt, 'position', 'sprite', has_properties{'is-drawable'})
+ecs.run_system(dt, 'position', 'sprite', has_properties={'is-drawable'})
 
 ecs.has(eid, has_properties={'is-sprite'})
 
