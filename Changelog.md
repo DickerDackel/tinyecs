@@ -1,3 +1,10 @@
+# v0.3.2
+
+- Better defaults
+- Removed leftover code from older versions
+- Fixes outdated imports
+- Fix has_properties parameter
+
 # v0.3.1
 
 - New function `purge_by_property`
