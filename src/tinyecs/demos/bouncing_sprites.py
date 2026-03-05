@@ -1,7 +1,7 @@
 import pygame
 import tinyecs as ecs
 
-import tinyecs.components as ecsc
+import tinyecs.compsys as ecsc
 
 from random import random, randint
 from pygame import Vector2

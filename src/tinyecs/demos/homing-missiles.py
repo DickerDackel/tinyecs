@@ -1,6 +1,6 @@
 import pygame
 import tinyecs as ecs
-import tinyecs.components as ecsc
+import tinyecs.compsys as ecsc
 
 from math import copysign
 from random import random
