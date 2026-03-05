@@ -60,7 +60,7 @@ class UnknownArchetypeError(KeyError):
 
 
 class RegistryError(RuntimeError):
-    def __init__(self, error, *, eid, cid, component, properties=None, other=None):
+    def __init__(self, error, *, eid, cid=None, component=None, properties=None, other=None):
         self.error = error
         self.eid = eid
         self.cid = cid
