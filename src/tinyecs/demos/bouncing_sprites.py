@@ -88,8 +88,6 @@ def main():
 
                 case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
                     running = False
-                case pygame.KEYDOWN if pygame.K_SPACE:
-                    create_a_bunch(group, SCREEN)
 
         if emit:
             create_a_bunch(group, SCREEN)
