@@ -193,10 +193,10 @@ This way, e.g. sprites can now be layered by filtering for the different
 types:
 
 ```python
-ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-enemy'))
-ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'bullet'))
-ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'fx'))
-ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'hud'))
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-enemy'})
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-bullet'})
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-fx'})
+ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-hud'})
 ```
 
 Finally, properties can be searched directly, e.g. to prune dead entities:
