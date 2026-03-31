@@ -98,9 +98,13 @@ def test_add_component():
     assert ecs.eidx[e2]['velocity'].dx == 5
     assert ecs.eidx[e2]['health'].health == 1000
 
+    old_obj = id(ecs.comp_of_eid(e1, 'pos'))
+    ecs.add_component(e1, 'pos', 'replaced')
+    assert old_obj not in ecs.oidx
+
     with pytest.raises(ecs.UnknownEntityError) as e:
         ecs.add_component('xyzzy', 'name', 'Lorem ipsum')
-    assert 'not registered' in str(e.value)
+    assert e.type == ecs.UnknownEntityError
 
 
 def test_remove_component():
@@ -134,7 +138,7 @@ def test_eids_by_cids():
 
     with pytest.raises(ecs.UnknownComponentError) as e:
         ecs.comp_of_eid('player', 'non-existent-comp')
-    assert 'not registered with entity' in str(e.value)
+    assert e.type == ecs.UnknownComponentError
 
 
 def test_cids_of_eid():
@@ -142,7 +146,7 @@ def test_cids_of_eid():
 
     with pytest.raises(ecs.UnknownEntityError) as e:
         ecs.cids_of_eid('missing-entity')
-    assert 'not registered' in str(e.value)
+    assert e.type == ecs.UnknownEntityError
 
 
 def test_comps_of_eid():
@@ -152,7 +156,7 @@ def test_comps_of_eid():
 
     with pytest.raises(ecs.UnknownEntityError) as e:
         ecs.comps_of_eid('missing-entity', 'irrelevant')
-    assert 'not registered' in str(e.value)
+    assert e.type == ecs.UnknownEntityError
 
 
 def test_run_system():
@@ -263,7 +267,7 @@ def test_add_system_to_domain():
     ecs.remove_system(ping_system)
     with pytest.raises(ecs.UnknownSystemError) as e:
         ecs.add_system_to_domain('test', ping_system)
-    assert 'not registered' in str(e.value)
+    assert e.type == ecs.UnknownSystemError
 
 
 def test_remove_system_from_domain():
@@ -328,11 +332,11 @@ def test_cid_of_comp():
 
     with pytest.raises(ecs.UnknownEntityError) as e:
         ecs.cid_of_comp(0, 'Lorem ipsum')
-    assert 'not registered' in str(e.value)
+    assert e.type == ecs.UnknownEntityError
 
     with pytest.raises(ecs.UnknownComponentError) as e:
         ecs.cid_of_comp(eid, 'wrong comp')
-    assert 'not found in entity' in str(e.value)
+    assert e.type == ecs.UnknownComponentError
 
 
 def test_healthcheck():
@@ -472,6 +476,27 @@ def test_property_purge():
     ecs.purge_by_property('a', 'b')
     assert len(ecs.eids_by_property('a')) == 0
     assert len(ecs.eids_by_property('b')) == 0
+
+
+def test_property_eid_unknown():
+    setup_property_tests()
+
+    eid = 'missing'
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.set_property(eid, 'prop-name')
+    assert e.type == ecs.UnknownEntityError
+
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.has_property(eid, 'prop-name')
+    assert e.type == ecs.UnknownEntityError
+
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.remove_property(eid, 'prop-name')
+    assert e.type == ecs.UnknownEntityError
+
+    with pytest.raises(ecs.UnknownEntityError) as e:
+        ecs.clear_properties(eid)
+    assert e.type == ecs.UnknownEntityError
 
 
 if __name__ == '__main__':

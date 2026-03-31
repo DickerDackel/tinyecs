@@ -740,6 +740,9 @@ def set_property(eid, property):
 
     """
 
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     plist[eid].add(property)
 
 
@@ -764,6 +767,10 @@ def has_property(eid, prop):
     bool
 
     """
+
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     return prop in plist[eid]
 
 
@@ -783,6 +790,10 @@ def remove_property(eid, prop):
     None
 
     """
+
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     plist[eid].remove(prop)
 
 
@@ -799,6 +810,10 @@ def clear_properties(eid):
     None
 
     """
+
+    if eid not in eidx:
+        raise UnknownEntityError(f'Entity {eid} is not registered')
+
     plist[eid] = set()
 
 
