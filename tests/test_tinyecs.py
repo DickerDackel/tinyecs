@@ -60,6 +60,18 @@ def setup():
                               {'name': SimpleNamespace(name='Ipsum'), 'health': Health()}))
 
 
+def setup_property_tests():
+    ecs.reset()
+    ecs.create_entity('xyzzy', properties={'a', 'b'})
+
+    for i in range(10):
+        eid = ecs.create_entity()
+        ecs.add_component(eid, 'comp-1', True)
+        ecs.add_component(eid, 'comp-2', True)
+        if i % 2 == 0:
+            ecs.set_property(eid, 'is-even')
+
+
 def re_helper(s, re):
     match = re.fullmatch(s)
     return match
@@ -393,18 +405,6 @@ def test_comps_of_archetype():
     assert len(run_parms) == 1
     assert run_parms[0][0] == 'player'
     assert len(run_parms[0][1]) == 2
-
-
-def setup_property_tests():
-    ecs.reset()
-    ecs.create_entity('xyzzy', properties={'a', 'b'})
-
-    for i in range(10):
-        eid = ecs.create_entity()
-        ecs.add_component(eid, 'comp-1', True)
-        ecs.add_component(eid, 'comp-2', True)
-        if i % 2 == 0:
-            ecs.set_property(eid, 'is-even')
 
 
 def test_property_add_check_remove():
