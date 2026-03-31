@@ -34,6 +34,17 @@ substract health from a player entity.
 from collections import defaultdict
 from uuid import uuid4
 
+__all__ = ('reset', 'healthcheck', 'create_entity', 'remove_entity',
+           'add_component', 'add_components', 'remove_component',
+           'add_system', 'remove_system', 'add_system_to_domain',
+           'remove_system_from_domain', 'has', 'eid_has', 'eids_by_cids',
+           'cids_of_eid', 'comps_of_eid', 'comp_of_eid', 'eid_of_comp',
+           'cid_of_comp', 'run_system', 'run_all_systems', 'run_domain',
+           'create_archetype', 'remove_archetype', 'add_to_archetype',
+           'remove_from_archetype', 'comps_of_archetype', 'set_property',
+           'set_properties', 'has_property', 'remove_property',
+           'clear_properties', 'eids_by_property', 'purge_by_property')
+
 eidx = {}  # entity index
 cidx = {}  # component id index
 sidx = {}  # system index
@@ -458,9 +469,9 @@ def has(eid, has_properties=None):
     """
     if has_properties is None:
         return eid in eidx
-    else:
-        property_filter = set(has_properties)
-        return eid in eidx and property_filter <= plist[eid]
+
+    property_filter = set(has_properties)
+    return eid in eidx and property_filter <= plist[eid]
 
 
 is_eid = has
@@ -487,6 +498,7 @@ def eid_has(eid, *cids):
     for cid in cids:
         if cid not in e:
             return False
+
     return True
 
 
@@ -595,7 +607,7 @@ def comps_of_eid(eid, *cids):
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
     if not cids:
-        return eidx[eid].values()
+        return list(eidx[eid].values())
 
     try:
         return [eidx[eid][cid] for cid in cids]
