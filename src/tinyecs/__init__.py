@@ -256,6 +256,13 @@ def add_component(eid, cid, comp):
     if cid not in cidx:
         cidx[cid] = {}
 
+    # Make sure, when replacing a component, the old one is remove from oidx
+    try:
+        old_comp = eidx[eid][cid]
+        del oidx[id(old_comp)]
+    except KeyError:
+        pass
+
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
     oidx[id(comp)] = eid
