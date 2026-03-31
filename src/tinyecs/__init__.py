@@ -43,19 +43,19 @@ plist = defaultdict(set)  # entity property lists
 archetype = {}
 
 
-class UnknownEntityError(KeyError):
+class UnknownEntityError(Exception):
     pass
 
 
-class UnknownComponentError(KeyError):
+class UnknownComponentError(Exception):
     pass
 
 
-class UnknownSystemError(KeyError):
+class UnknownSystemError(Exception):
     pass
 
 
-class UnknownArchetypeError(KeyError):
+class UnknownArchetypeError(Exception):
     pass
 
 
