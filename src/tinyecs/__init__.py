@@ -295,8 +295,7 @@ def add_components(eid, components):
     None
     """
 
-    for cid, comp in components.items():
-        add_component(eid, cid, comp)
+    return [add_component(eid, cid, comp) for cid, comp in components.items()]
 
 
 def remove_component(eid, *cids):
