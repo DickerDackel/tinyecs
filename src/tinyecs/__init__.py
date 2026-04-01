@@ -60,7 +60,7 @@ eidx = {}  # entity index
 cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
-oidx = {}  # object index
+oidx = defaultdict(set)  # object index
 plist = defaultdict(set)  # entity property lists
 archetype = {}
 
@@ -267,16 +267,19 @@ def add_component(eid, cid, comp):
     if cid not in cidx:
         cidx[cid] = {}
 
-    # Make sure, when replacing a component, the old one is removed from oidx
+    # Make sure, when replacing a component, the the old one is removed from
+    # oidx for this entity.
     try:
-        old_comp = eidx[eid][cid]
-        del oidx[id(old_comp)]
+        old_comp = id(eidx[eid][cid])
+        oidx[old_comp].discard(eid)
+        if not oidx[old_comp]:
+            del oidx[old_comp]
     except KeyError:
         pass
 
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
-    oidx[id(comp)] = eid
+    oidx[id(comp)].add(eid)
 
     add_to_archetype(eid)
 
@@ -332,9 +335,12 @@ def remove_component(eid, *cids):
         # Also, no need to try each on their own
         try:
             obj = cidx[cid][eid]
+            obj_id = id(obj)
             del cidx[cid][eid]
             del eidx[eid][cid]
-            del oidx[id(obj)]
+            oidx[obj_id].discard(eid)
+            if not oidx[obj_id]:
+                del oidx[id(obj)]
         except KeyError:
             pass
         else:

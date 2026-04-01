@@ -222,12 +222,24 @@ def test_eidx_and_cidx_consistent():
 
 
 def test_eid_of_comp():
-    e = ecs.create_entity()
-    c = SimpleNamespace(a=1, b=2)
-    ecs.add_component(e, 'test', c)
-    assert ecs.eid_of_comp(c) == e
+    e1, e2 = setup()
+    shared = SimpleNamespace(a=1, b=2)
+    oid = id(shared)
 
-    ecs.remove_entity(e)
+    ecs.add_component(e1, 'shared', shared)
+    assert ecs.eid_of_comp(shared) == {e1}
+    assert ecs.oidx[oid] == {e1}
+
+    ecs.add_component(e2, 'shared', shared)
+    assert ecs.eid_of_comp(shared) == {e1, e2}
+    assert ecs.oidx[oid] == {e1, e2}
+
+    ecs.remove_component(e1, 'shared')
+    assert ecs.eid_of_comp(shared) == {e2}
+    assert ecs.oidx[oid] == {e2}
+
+    ecs.remove_component(e2, 'shared')
+    assert oid not in ecs.oidx
 
 
 def test_reset():
