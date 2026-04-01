@@ -32,6 +32,7 @@ substract health from a player entity.
 """
 
 from collections import defaultdict
+from typing import Hashable
 from uuid import uuid4
 
 __all__ = ('reset', 'healthcheck', 'create_entity', 'remove_entity',
@@ -44,6 +45,12 @@ __all__ = ('reset', 'healthcheck', 'create_entity', 'remove_entity',
            'remove_from_archetype', 'comps_of_archetype', 'set_property',
            'set_properties', 'has_property', 'remove_property',
            'clear_properties', 'eids_by_property', 'purge_by_property')
+
+type EntityID = Hashable
+type ComponentID = Hashable
+type DomainID = Hashable
+type Property = Hashable
+type Component = object
 
 eidx = {}  # entity index
 cidx = {}  # component id index
