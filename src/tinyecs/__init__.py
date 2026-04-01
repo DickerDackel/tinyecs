@@ -35,16 +35,20 @@ from collections import defaultdict
 from collections.abc import Hashable
 from uuid import uuid4
 
-__all__ = ('reset', 'healthcheck', 'create_entity', 'remove_entity',
-           'add_component', 'add_components', 'remove_component',
-           'add_system', 'remove_system', 'add_system_to_domain',
-           'remove_system_from_domain', 'has', 'eid_has', 'eids_by_cids',
-           'cids_of_eid', 'comps_of_eid', 'comp_of_eid', 'eid_of_comp',
-           'cid_of_comp', 'run_system', 'run_all_systems', 'run_domain',
-           'create_archetype', 'remove_archetype', 'add_to_archetype',
-           'remove_from_archetype', 'comps_of_archetype', 'set_property',
-           'set_properties', 'has_property', 'remove_property',
-           'clear_properties', 'eids_by_property', 'purge_by_property')
+__all__ = ['Component', 'ComponentID', 'DomainID', 'EntityID', 'Property',
+           'RegistryError', 'UnknownArchetypeError', 'UnknownComponentError',
+           'UnknownEntityError', 'UnknownSystemError', 'add_component',
+           'add_components', 'add_system', 'add_system_to_domain',
+           'add_to_archetype', 'cid_of_comp', 'cids_of_eid',
+           'clear_properties', 'comp_of_eid', 'comps_of_archetype',
+           'comps_of_eid', 'create_archetype', 'create_entity', 'eid_has',
+           'eid_of_comp', 'eids_by_cids', 'eids_by_property', 'has',
+           'has_property', 'healthcheck', 'purge_by_property',
+           'remove_archetype', 'remove_component', 'remove_entity',
+           'remove_from_archetype', 'remove_property', 'remove_system',
+           'remove_system_from_domain', 'reset', 'run_all_systems',
+           'run_domain', 'run_system', 'set_properties', 'set_property',
+           'update_component',]
 
 type EntityID = Hashable
 type ComponentID = Hashable
