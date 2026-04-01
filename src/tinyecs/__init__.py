@@ -119,7 +119,7 @@ def healthcheck():
     Returns
     -------
     bool
-        True if successful, exception otherwise.
+        True if successful, RegistryError exception otherwise.
 
     Raises
     ------
@@ -156,7 +156,7 @@ def healthcheck():
 def create_entity(tag=None, components=None, properties=None):
     """Create a new entity
 
-        create_entity(tag=None, **kwargs) --> entity_id
+        create_entity(tag=None, components=None, properties=None) --> entity_id
 
     Parameters
     ----------
@@ -165,10 +165,10 @@ def create_entity(tag=None, components=None, properties=None):
         if no tag is passed, a uuid is generated
 
     components:
-        A list of components
+        A dict with component IDs as keys and components as values (see add_component)
 
     properties:
-        A list of properties
+        An iterable of properties
 
     Returns
     -------
@@ -192,7 +192,7 @@ def create_entity(tag=None, components=None, properties=None):
 def remove_entity(eid):
     """Remove an entity from the system
 
-        remove_entity(entity_id, postponed=False) -> None
+        remove_entity(entity_id) -> None
 
     Removes all bindings to components and the entity_id itself from the
     registry.
@@ -292,7 +292,7 @@ def add_components(eid, components):
     Parameters
     ----------
     components:
-        A list of (cid, comp) tuples (see add_component)
+        A dict with component IDs as keys and components as values (see add_component)
 
     Returns
     -------
