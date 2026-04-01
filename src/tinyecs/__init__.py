@@ -78,13 +78,13 @@ class UnknownArchetypeError(Exception):
 
 
 class RegistryError(RuntimeError):
-    def __init__(self, error, *, eid, cid=None, component=None, properties=None, other=None):
+    def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
         self.error = error
         self.eid = eid
         self.cid = cid
         self.component = component
-        self.properties = properties
         self.other = other
+        self.properties = properties
 
 
 def reset():
