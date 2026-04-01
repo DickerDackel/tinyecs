@@ -40,3 +40,7 @@ addopts = "-rA -s"
 testpaths = [
     "tests",
 ]
+
+[tool.basedpyright]
+reportAny = false
+reportExplicitAny = false
