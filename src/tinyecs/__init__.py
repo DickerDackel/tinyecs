@@ -32,7 +32,7 @@ substract health from a player entity.
 """
 
 from collections import defaultdict
-from typing import Hashable
+from collections.abc import Hashable
 from uuid import uuid4
 
 __all__ = ('reset', 'healthcheck', 'create_entity', 'remove_entity',
