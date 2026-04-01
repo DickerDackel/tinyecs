@@ -81,7 +81,7 @@ class UnknownArchetypeError(Exception):
     pass
 
 
-class RegistryError(RuntimeError):
+class RegistryError(Exception):
     def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
         self.error = error
         self.eid = eid
