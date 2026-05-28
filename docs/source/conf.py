@@ -6,11 +6,6 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-# import os
-# import sys
-#
-# sys.path.insert(0, os.path.abspath('../../src'))
-
 project = 'tinyecs'
 copyright = '2026, Michael "Dicker Dackel" Lamertz'
 author = 'Michael "Dicker Dackel" Lamertz'

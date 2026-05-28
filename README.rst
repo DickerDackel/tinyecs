@@ -1,15 +1,16 @@
-# tinyecs - The teeniest, tiniest ECS for python
+Introduction
+############
 
 ECS stands for Entity Component System, and it is a programming paradigm that
 differs from the well known OO.
 
-During my research I stumbled over
+During my research I stumbled over `this article`_ and after reading part 2 and
+3, I decided to implement an ECS myself, well aware that `esper` is a solid
+and long existing implementation, but I wanted to see how to implement it
+myself.
 
-[this article](https://web.archive.org/web/20250408195932/https://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/)
+.. _this article: https://web.archive.org/web/20250408195932/https://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/
 
-and after reading part 2 and 3, I decided to implement an ECS myself, well
-aware that `esper` is a solid and long existing implementation, but I wanted
-to see how to implement it myself.
 
 I'm not trying to sell you an ECS by explaining the problems of multiple
 inheritance in game programming.  There are articles out there that do this in
@@ -19,30 +20,31 @@ bouncing sprites using pygame-ce.  But tinyecs is platform agnostic, you can
 use it with whatever library you like.
 
 
-## Installation
+Installation
+============
 
 tinyecs is available on pip and can be installed by::
 
     pip install tinyecs
 
-The project is maintained and hosted on github at
-https://github.com/dickerdackel/tinyecs, where you also can find the wheels
-for a local install, or install it directly from the cloned repo.
+The project is maintained and hosted on `github`_, where you also can find the
+wheels for a local install, or install it directly from the cloned repo.
 
-```console
-git clone https://github.com/dickerdackel/tinyecs
-cd tinyecs
-python3 -m venv --prompt tinyecs .venv
-.venv/bin/activate
-# or .venv/Scripts/activate.bat on windows
-pip install .
-```
+.. _github: https://github.com/dickerdackel/tinyecs
 
-## Support / Contributing
+    git clone https://github.com/dickerdackel/tinyecs
+    cd tinyecs
+    python3 -m venv --prompt tinyecs .venv
+    .venv/bin/activate
+    # or .venv/Scripts/activate.bat on windows
+    pip install .
 
-Issues can be opened on `Github`_
+Support / Contributing
+======================
 
-.. _Github: https://github.com/dickerdackel/tinyecs/issues
+Issues can be opened on `github issues`_
+
+.. _github issues: https://github.com/dickerdackel/tinyecs/issues
 
 Please respect, that I don't want any contributions done with the assistance
 of AI.  This is a hobby project with focus on the craft of programming.  I
@@ -53,7 +55,8 @@ provided solutions were often besides the point or plain wrong.
 I have no possibility to enforce that request, the simple fact that I ask for
 it should be sufficient.
 
-## License
+License
+=======
 
 This software is provided under the MIT license.
 
