@@ -1,3 +1,11 @@
+# v0.3.3
+
+- Sphinx docs
+- Lots of docstring cleanups and enhancements
+- experimental stubs removed, type hints are now embedded
+- BREAKING CHANGE - oidx must be a set, since an object can be registered with multiple entities
+- various minor cleanups and enhancements
+
 # v0.3.2
 
 - Better defaults
