@@ -1,5 +1,5 @@
 tinyecs - The teeniest, tiniest python ECS
-###########################################
+==========================================
 
 .. toctree::
    :caption: Contents:
@@ -7,8 +7,9 @@ tinyecs - The teeniest, tiniest python ECS
    introduction
    tutorial
    api
+   license
 
-Indices
-=======
+Index
+=====
 
 * :ref:`genindex`
