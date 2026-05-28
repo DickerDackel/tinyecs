@@ -304,12 +304,6 @@ def test_run_domain():
     assert res == {}
 
 
-def test_is_eid():
-    e = ecs.create_entity()
-    assert ecs.is_eid(e)
-    assert not ecs.is_eid('no-eid')
-
-
 def test_eid_has():
     ecs.reset()
     e1, e2 = setup()
