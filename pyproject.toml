@@ -35,6 +35,9 @@ bugtracker = "https://github.com/DickerDackel/tinyecs/issues"
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.pytest.ini_options]
 addopts = "-rA -s"
 testpaths = [
