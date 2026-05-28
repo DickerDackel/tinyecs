@@ -27,8 +27,17 @@ tinyecs is available on pip and can be installed by::
 
     pip install tinyecs
 
-The project is maintained and hosted on github at https://github.com/dickerdackel/tinyecs
+The project is maintained and hosted on `github`_, where you also can find the
+wheels for a local install, or install it directly from the cloned repo.
 
+.. _github: https://github.com/dickerdackel/tinyecs
+
+    git clone https://github.com/dickerdackel/tinyecs
+    cd tinyecs
+    python3 -m venv --prompt tinyecs .venv
+    .venv/bin/activate
+    # or .venv/Scripts/activate.bat on windows
+    pip install .
 
 Support / Contributing
 ======================
