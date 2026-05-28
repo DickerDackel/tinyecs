@@ -32,6 +32,8 @@ wheels for a local install, or install it directly from the cloned repo.
 
 .. _github: https://github.com/dickerdackel/tinyecs
 
+.. code-block::
+
     git clone https://github.com/dickerdackel/tinyecs
     cd tinyecs
     python3 -m venv --prompt tinyecs .venv
