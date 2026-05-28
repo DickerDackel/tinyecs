@@ -33,9 +33,10 @@ html_theme = 'furo'
 html_static_path = ['_static']
 html_theme_options = {
     "navigation_with_keys": True,
+    "source_view_link": "https://github.com/dickerdackel/tinyecs/docs/source/{filename}",
     "source_repository": "https://github.com/dickerdackel/tinyecs",
     "source_branch": "main",
-    "source_directory": "docs/",
+    "source_directory": "docs/source",
     "dark_css_variables": {
         "color-api-pre-name": "orange",
         "color-api-name": "orange",
