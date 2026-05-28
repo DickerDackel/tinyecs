@@ -19,8 +19,7 @@ differs from the well known OO.
 
 During my research I stumbled over
 
-[this article
-series](https://web.archive.org/web/20190913112237/https://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/)
+[this article series](https://web.archive.org/web/20250408195932/https://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/)
 
 and after reading part 2 and 3, I decided to implement an ECS myself, well
 aware that `esper` is a solid and long existing implementation, but I wanted

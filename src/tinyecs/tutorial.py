@@ -262,7 +262,7 @@ sprite group added.
 ```py
 import pygame
 
-TITLE = 'pygame minimal template'
+TITLE = 'tinyecs tutorial'
 SCREEN = pygame.Rect(0, 0, 1024, 768)
 FPS = 60
 DT_MAX = 3 / FPS
@@ -435,7 +435,7 @@ from random import random, choice
 from pygame import Vector2
 from pygame.colordict import THECOLORS
 
-TITLE = 'pygame minimal template'
+TITLE = 'tinyecs tutorial'
 SCREEN = pygame.Rect(0, 0, 1024, 768)
 FPS = 60
 DT_MAX = 3 / FPS
@@ -636,7 +636,7 @@ from random import random, choice
 from pygame import Vector2
 from pygame.colordict import THECOLORS
 
-TITLE = 'pygame minimal template'
+TITLE = 'tinyecs tutorial'
 SCREEN = pygame.Rect(0, 0, 1024, 768)
 FPS = 60
 DT_MAX = 3 / FPS

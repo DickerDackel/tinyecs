@@ -1,38 +1,6 @@
-"""tinyecs - The teeniesst, tiniest ESC system
-
-This is implemented after quick reading part 2 and 3 of
-
-https://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/
-
-The base premise is: No OO and entities have *no* data.
-
-So an entity is only a unique identifier.  Components can be anything that can
-hold data.
-
-Workflow:
-
-    1. entity = create_entity()
-       ...
-    2. add_component(entity, cid, component)
-       ...
-    3. add_system(fkt, *cids)
-       ...
-    4. in game loop run_all_systems(dt)
-
-    alternatively
-
-    3. run_system(dt, fkt, *cids)
-       ...
-
-If a system needs to modify components of other entities, these entities e.g.
-the player, need special eids so they can be queried from the registry.
-
-use comps_of_eid(eid, *comps) for that.  This way, a bullet component can
-substract health from a player entity.
-"""
-
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Hashable, Iterable
+from typing import Any, Protocol
 from uuid import uuid4
 
 __all__ = ['Component', 'ComponentID', 'DomainID', 'EntityID', 'Property',
@@ -56,6 +24,17 @@ type DomainID = Hashable
 type Property = Hashable
 type Component = object
 
+type _EntityComponentsBundle = tuple[EntityID, list[Component]]
+type _OptionalProperties = Iterable[Property] | None
+type _RunSystemResult = dict[EntityID, Any]
+
+
+# The typehinting system can't work with functions using *args, **kwargs.
+# This solution comes from https://docs.python.org/3/library/typing.html#annotating-callable-objects
+class SystemFunction(Protocol):
+    def __call__(self, dt: float, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, object]) -> Any: ...
+
+
 eidx = {}  # entity index
 cidx = {}  # component id index
 sidx = {}  # system index
@@ -66,22 +45,28 @@ archetype = {}
 
 
 class UnknownEntityError(Exception):
+    """Raised if information from an unknown entity is requested."""
     pass
 
 
 class UnknownComponentError(Exception):
+    """Raised if an unknown component is requested."""
     pass
 
 
 class UnknownSystemError(Exception):
+    """Raised if an unknown system is requested."""
     pass
 
 
 class UnknownArchetypeError(Exception):
+    """Raised if an unknown archetype is requested."""
     pass
 
 
 class RegistryError(Exception):
+    """Raised if an inconsistency is found in the internal ecs registry."""
+
     def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
         self.error = error
         self.eid = eid
@@ -91,13 +76,12 @@ class RegistryError(Exception):
         self.properties = properties
 
 
-def reset():
+def reset() -> None:
     """Remove everything registered in the ECS.
-
-        ecs.reset() -> None
 
     Use this to clear everything, e.g. before a new game
     """
+
     eidx.clear()
     cidx.clear()
     sidx.clear()
@@ -107,7 +91,7 @@ def reset():
     archetype.clear()
 
 
-def healthcheck():
+def healthcheck() -> bool:
     """Perform a health check on the registry.
 
     This function checks if the cross references between the entity index and
@@ -131,6 +115,7 @@ def healthcheck():
         other       component in other index or None
 
     """
+
     for eid in eidx:
         for cid in eidx[eid]:
             if cid not in cidx:
@@ -153,10 +138,10 @@ def healthcheck():
     return True
 
 
-def create_entity(tag=None, components=None, properties=None):
+def create_entity(tag: EntityID = None,
+                  components: dict[ComponentID, Component] | None = None,
+                  properties: _OptionalProperties = None) -> EntityID:
     """Create a new entity
-
-        create_entity(tag=None, components=None, properties=None) --> entity_id
 
     Parameters
     ----------
@@ -174,7 +159,6 @@ def create_entity(tag=None, components=None, properties=None):
     -------
     Hashable
         The entity ID.  Same as given if one is passed, otherwise a uuid4
-
     """
     eid = tag if tag else str(uuid4())
     eidx[eid] = {}
@@ -189,10 +173,8 @@ def create_entity(tag=None, components=None, properties=None):
     return eid
 
 
-def remove_entity(eid):
-    """Remove an entity from the system
-
-        remove_entity(entity_id) -> None
+def remove_entity(eid: EntityID) -> None:
+    """Remove an entity from the system.
 
     Removes all bindings to components and the entity_id itself from the
     registry.
@@ -207,8 +189,8 @@ def remove_entity(eid):
     Returns
     -------
     None
-
     """
+
     # Ignore unknown eids, since we're removing anyways
     try:
         cids = eidx[eid].keys()
@@ -230,7 +212,7 @@ def remove_entity(eid):
         pass
 
 
-def add_component(eid, cid, comp):
+def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> ComponentID:
     """Add a component to the registry.
 
     Parameters
@@ -259,8 +241,8 @@ def add_component(eid, cid, comp):
     ------
     UnknownEntityError
         If the `eid` doesn't exist in the registry.
-
     """
+
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
@@ -289,7 +271,7 @@ def add_component(eid, cid, comp):
 update_component = add_component
 
 
-def add_components(eid, components):
+def add_components(eid: EntityID, components: dict[ComponentID, Component]) -> list[ComponentID]:
     """A convenience wrapper around add_component
 
     Parameters
@@ -305,10 +287,8 @@ def add_components(eid, components):
     return [add_component(eid, cid, comp) for cid, comp in components.items()]
 
 
-def remove_component(eid, *cids):
-    """remove components from an entity
-
-        remove_component(eid, cid) -> None
+def remove_component(eid: EntityID, *cids: ComponentID) -> None:
+    """Remove one or more components from an entity.
 
     Parameters
     ----------
@@ -326,8 +306,8 @@ def remove_component(eid, *cids):
     Returns
     -------
     None
-
     """
+
     for cid in cids:
         remove_from_archetype(eid, cid)
 
@@ -348,10 +328,8 @@ def remove_component(eid, *cids):
                 obj.shutdown_()
 
 
-def add_system(fkt, *cids):
-    """Add a system for the specifiied cids
-
-        add_system(fkt, *cids) -> None
+def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
+    """Add a system for the specifiied cids.
 
     Parameters
     ----------
@@ -380,16 +358,14 @@ def add_system(fkt, *cids):
     Note
     ----
     Registering a system automatically creates an `archetype` from the given `cids`
-
     """
+
     create_archetype(*cids)
     sidx[fkt] = cids
 
 
-def remove_system(fkt):
-    """remove the function from the registry
-
-        remove_system(fkt) -> None
+def remove_system(fkt: SystemFunction) -> None:
+    """Remove the given function from the registry.
 
     Parameters
     ----------
@@ -406,8 +382,8 @@ def remove_system(fkt):
     ----
     In contrast to `add_system`, an existing `archetype` is not automatically
     removed.
-
     """
+
     for domain in didx:
         remove_system_from_domain(domain, fkt)
 
@@ -418,8 +394,8 @@ def remove_system(fkt):
         pass
 
 
-def add_system_to_domain(domain, system):
-    """Create or extend a domain with the given system
+def add_system_to_domain(domain: DomainID, system: SystemFunction) -> None:
+    """Create or extend a domain with the given system.
 
     Domains are collections of systems that can run with a single function
     call run_domain.
@@ -436,8 +412,8 @@ def add_system_to_domain(domain, system):
     Returns
     -------
     None
-
     """
+
     if domain not in didx:
         didx[domain] = set()
     if system not in sidx:
@@ -445,7 +421,7 @@ def add_system_to_domain(domain, system):
     didx[domain].add(system)
 
 
-def remove_system_from_domain(domain, system):
+def remove_system_from_domain(domain: DomainID, system: SystemFunction) -> None:
     """Remove a registered system from the given domain.
 
     Parameters
@@ -460,8 +436,8 @@ def remove_system_from_domain(domain, system):
     Note
     ----
     If the system is not in the domain, the error is silently ignored.
-
     """
+
     if domain not in didx:
         return
     try:
@@ -470,8 +446,8 @@ def remove_system_from_domain(domain, system):
         pass
 
 
-def has(eid, has_properties=None):
-    """Check if eid is valid.
+def has(eid: EntityID, has_properties: _OptionalProperties = None) -> bool:
+    """Check if the given eid is valid.
 
     There is no reason to not use `eid in tinyecs.eidx`.  This is just for
     people who prefer a functional interface.
@@ -488,8 +464,8 @@ def has(eid, has_properties=None):
     -------
     bool
         True if the eid is valid
-
     """
+
     if has_properties is None:
         return eid in eidx
 
@@ -497,14 +473,8 @@ def has(eid, has_properties=None):
     return eid in eidx and property_filter <= plist[eid]
 
 
-is_eid = has
-is_eid.__doc__ = """For backward compatibility.  Use `tinyecs.has(eid)` instead."""
-
-
-def eid_has(eid, *cids):
+def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
     """check if entity eid has all listed cids.
-
-        eid_has(*cids) -> bool
 
     Parameters
     ----------
@@ -515,8 +485,8 @@ def eid_has(eid, *cids):
     -------
     bool
         True if all given cids are available for the specified eid
-
     """
+
     e = eidx[eid]
     for cid in cids:
         if cid not in e:
@@ -525,10 +495,8 @@ def eid_has(eid, *cids):
     return True
 
 
-def eids_by_cids(*cids, has_properties=None):
+def eids_by_cids(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[tuple[EntityID, list[Component]]]:
     """get eids that match all specified cids
-
-        eids_by_cid(*cids) -> [(eid, comps), ...]
 
     Parameters
     ----------
@@ -543,8 +511,8 @@ def eids_by_cids(*cids, has_properties=None):
     -------
     list
         A list of tuples of entity IDs and components
-
     """
+
     res = []
     at = tuple(cids)
     if at in archetype:
@@ -568,10 +536,8 @@ def eids_by_cids(*cids, has_properties=None):
     return res
 
 
-def cids_of_eid(eid):
-    """return the list of component IDs of the specified entity
-
-        cids_of_eid(eid) -> [cids]
+def cids_of_eid(eid: EntityID) -> list[ComponentID]:
+    """Return the list of component IDs of the specified entity
 
     Parameters
     ----------
@@ -587,18 +553,16 @@ def cids_of_eid(eid):
     ------
     UnknownEntityError
         If the entity is not registered (anymore).
-
     """
+
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
     return list(eidx[eid].keys())
 
 
-def comps_of_eid(eid, *cids):
-    """get components from the eid for the specified cids
-
-        comps_of_eid(eid, *cids) -> [components]
+def comps_of_eid(eid: EntityID, *cids: ComponentID) -> list[Component]:
+    """Get components from the eid for the specified cids.
 
     While cids_of_eid gets component IDs, this function now gets the actual
     components containing the data.
@@ -626,6 +590,7 @@ def comps_of_eid(eid, *cids):
     UnknownComponentError
         If the passed component couldn't be found.
     """
+
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
@@ -638,10 +603,8 @@ def comps_of_eid(eid, *cids):
         raise UnknownComponentError(f'Component {e} not registered with entity {eid}') from e
 
 
-def comp_of_eid(eid, cid):
-    """get a single component from an entity
-
-        comp_of_eid(eid, cid) -> component
+def comp_of_eid(eid: EntityID, cid: ComponentID) -> Component:
+    """Get a single component from an entity.
 
     Parameters
     ----------
@@ -655,15 +618,13 @@ def comp_of_eid(eid, cid):
     -------
     component: object
         The requested component of the given entity ID
-
     """
+
     return comps_of_eid(eid, cid)[0]
 
 
-def eid_of_comp(comp):
-    """find the entity id for object comp
-
-        eid_of_comp(cid) -> entity
+def eid_of_comp(comp: Component) -> set(EntityID):
+    """Find the entity id for object comp.
 
     Parameters
     ----------
@@ -674,12 +635,12 @@ def eid_of_comp(comp):
     -------
     entity_id
         The entity_id the given component belongs to
-
     """
+
     return oidx[id(comp)]
 
 
-def cid_of_comp(eid, comp):
+def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
     """Get the cid of a component.
 
     A system only receives an actual component, but cannot know under which
@@ -710,8 +671,8 @@ def cid_of_comp(eid, comp):
 
     UnknownComponentError
         If the passed component couldn't be found.
-
     """
+
     if not has(eid):
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
@@ -723,10 +684,12 @@ def cid_of_comp(eid, comp):
     raise UnknownComponentError(f'Component {comp} not found in entity {eid}')
 
 
-def run_system(dt, fkt, *cids, has_properties=None, **kwargs):
-    """run the system for the matching cids
-
-        run_system(dt, fkt, *cids) -> {eid: fkt(dt, eid, *comps), ...}
+def run_system(dt: float,
+               fkt: SystemFunction,
+               *cids: ComponentID,
+               has_properties: _OptionalProperties = None,
+               **kwargs: dict[str, Any]) -> _RunSystemResult:
+    """Run the system for the matching cids.
 
     Parameters
     ----------
@@ -754,7 +717,6 @@ def run_system(dt, fkt, *cids, has_properties=None, **kwargs):
     -------
     dict
         A dictionary with entity IDs as key and the function result as value
-
     """
 
     at = tuple(cids)
@@ -774,10 +736,8 @@ def run_system(dt, fkt, *cids, has_properties=None, **kwargs):
     return {eid: fkt(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
-def run_all_systems(dt):
+def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
     """Run all registered systems
-
-        run_all_systems(dt) -> {system: run_system-result, ...}
 
     This calls above run_system for all registered systems with their
     appropriate components.
@@ -792,16 +752,14 @@ def run_all_systems(dt):
     -------
     dict
         A dict of function as key, and the result of run_system as value
-
     """
+
     return {fkt: run_system(dt, fkt, *comps)
             for fkt, comps in sidx.items()}
 
 
-def run_domain(dt, domain):
-    """Run all systems within domain
-
-        run_domain(dt) -> {system: run_system-result, ...}
+def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemResult]:
+    """Run all systems within domain.
 
     This is the same as run_all_systems, but limited to a specific domain.
 
@@ -814,8 +772,8 @@ def run_domain(dt, domain):
     -------
     dict
         A dict of function as key, and the result of run_system as value
-
     """
+
     if domain not in didx:
         return {}
 
@@ -823,7 +781,7 @@ def run_domain(dt, domain):
             for fkt in didx[domain]}
 
 
-def create_archetype(*cids):
+def create_archetype(*cids: ComponentID) -> None:
     """Create an archetype from the provided cids.
 
     An archetype is a fixed combination of components.  Each time a component
@@ -855,8 +813,8 @@ def create_archetype(*cids):
     Returns
     -------
     None
-
     """
+
     at = tuple(cids)
     if at in archetype:
         return
@@ -864,14 +822,36 @@ def create_archetype(*cids):
     archetype[at] = dict(eids_by_cids(*cids))
 
 
-def remove_archetype(cids):
-    """Remove an archetype from the system. (See `add_archetype`)"""
+def remove_archetype(cids: Iterable[ComponentID]) -> None:
+    """Remove an archetype from the system. (See `add_archetype`).
+
+    Parameters
+    ----------
+    cids
+        The list of component IDs that construct the archetype.
+
+    Returns
+    -------
+    None
+    """
+
     at = tuple(cids)
     del archetype[at]
 
 
-def add_to_archetype(eid):
-    """Make sure, eid is registered with all appropriate archetypes."""
+def add_to_archetype(eid: EntityID) -> None:
+    """Make sure, eid is registered with all appropriate archetypes.
+
+    Parameters
+    ----------
+    eids
+        The entity ID to add to the archetype
+
+    There should be no need to call this function manually.  It's called
+    internally, when a new component is added to an entity which makes this
+    entity belong into an archetype it wasn't a member of before.
+    """
+
     have_comps = set(cids_of_eid(eid))
     for at in archetype:
         s = set(at)
@@ -879,14 +859,28 @@ def add_to_archetype(eid):
             archetype[at][eid] = comps_of_eid(eid, *at)
 
 
-def remove_from_archetype(eid, cid=None):
-    """Make sure, eid is only registered with appropriate archetypes."""
+def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None:
+    """Make sure, eid is only registered with appropriate archetypes.
+
+    Parameters
+    ----------
+    eids
+        The entity ID to remove from the archetype
+
+    cid
+        An optional component ID.
+
+    There should be no need to call this function manually.  It's called
+    internally, when a component is removed from an entity, so that the entity
+    no longer belongs to that archetype.
+    """
+
     for at, adict in archetype.items():
         if eid in adict and (cid is None or cid in at):
             del adict[eid]
 
 
-def comps_of_archetype(*cids, has_properties=None):
+def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[_EntityComponentsBundle]:
     """Return the given archetype.
 
     Primarily used by `run_system`.
@@ -926,7 +920,7 @@ def comps_of_archetype(*cids, has_properties=None):
         return [(e, comps) for e, comps in archetype[at].items()]
 
 
-def set_property(eid, property):
+def set_property(eid: EntityID, property: Property) -> None:
     """Add a property to the given entity.
 
     Parameters
@@ -945,7 +939,6 @@ def set_property(eid, property):
     ------
     UnknownEntityError
         If the entity is not registered (anymore).
-
     """
 
     if eid not in eidx:
@@ -954,12 +947,24 @@ def set_property(eid, property):
     plist[eid].add(property)
 
 
-def set_properties(eid, properties):
+def set_properties(eid: EntityID, properties: Iterable[Property]) -> None:
+    """Add a list of properties to the given entity.
+
+    Parameters
+    ----------
+    eid
+        The entity ID to add the properties to.
+
+    property:
+        The list of properties to add.
+
+    This is just a convenience wrapper around `set_property`.
+    """
     for prop in properties:
         set_property(eid, prop)
 
 
-def has_property(eid, prop):
+def has_property(eid: EntityID, prop: Property) -> bool:
     """Checks if the given entity has that property.
 
     Parameters
@@ -978,7 +983,6 @@ def has_property(eid, prop):
     ------
     UnknownEntityError
         If the entity is not registered (anymore).
-
     """
 
     if eid not in eidx:
@@ -987,7 +991,7 @@ def has_property(eid, prop):
     return prop in plist[eid]
 
 
-def remove_property(eid, prop):
+def remove_property(eid: EntityID, prop: Property) -> None:
     """Removes a property from the given entity.
 
     Parameters
@@ -1006,7 +1010,6 @@ def remove_property(eid, prop):
     ------
     UnknownEntityError
         If the entity is not registered (anymore).
-
     """
 
     if eid not in eidx:
@@ -1015,7 +1018,7 @@ def remove_property(eid, prop):
     plist[eid].remove(prop)
 
 
-def clear_properties(eid):
+def clear_properties(eid: EntityID) -> None:
     """Removes all properties from the given entity.
 
     Parameters
@@ -1031,7 +1034,6 @@ def clear_properties(eid):
     ------
     UnknownEntityError
         If the entity is not registered (anymore).
-
     """
 
     if eid not in eidx:
@@ -1040,10 +1042,8 @@ def clear_properties(eid):
     plist[eid] = set()
 
 
-def eids_by_property(*properties):
-    """get eids that match all given properties
-
-        eids_by_property(*properties) -> [eid, ...]
+def eids_by_property(*properties: Property) -> list[EntityID]:
+    """Get a list of entities that match all given properties.
 
     Parameters
     ----------
@@ -1062,10 +1062,8 @@ def eids_by_property(*properties):
     return [eid for eid, props in plist.items() if property_filter <= props]
 
 
-def purge_by_property(*properties):
-    """purge entities that match all given properties
-
-        purge_by_property(*properties) -> None
+def purge_by_property(*properties: Property) -> None:
+    """Purge entities that match all given properties.
 
     This is useful to clean up all entities belonging to a sub state without
     impacting the remaining registry.
@@ -1075,7 +1073,6 @@ def purge_by_property(*properties):
 
     *properties:
         All properties that need to match
-
     """
 
     for eid in eids_by_property(*properties):
