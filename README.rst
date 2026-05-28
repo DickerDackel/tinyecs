@@ -39,6 +39,13 @@ wheels for a local install, or install it directly from the cloned repo.
     # or .venv/Scripts/activate.bat on windows
     pip install .
 
+Documentation
+=============
+
+The project home and main documentation is on `Read the Docs`_.
+
+.. _Read the Docs: https://tinyecs.readthedocs.io/
+
 Support / Contributing
 ======================
 
