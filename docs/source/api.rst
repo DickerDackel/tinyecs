@@ -25,6 +25,8 @@ ECS Management
 
 .. autofunction:: tinyecs.reset
 
+.. _api-bulk-run:
+
 Running systems in bulk
 -----------------------
 
@@ -65,7 +67,25 @@ Properties
 .. autofunction:: tinyecs.eids_by_property
 .. autofunction:: tinyecs.purge_by_property
 
-.. .. automodule:: tinyecs
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+Exceptions
+----------
+
+.. autoexception:: tinyecs.UnknownEntityError
+.. autoexception:: tinyecs.UnknownComponentError
+.. autoexception:: tinyecs.UnknownSystemError
+.. autoexception:: tinyecs.UnknownArchetypeError
+.. autoexception:: tinyecs.RegistryError
+
+Type-hinting
+------------
+
+For readability in your code, if you use type hinting, tinyecs defines the
+following aliases:
+
+.. code-block::
+
+    type EntityID = Hashable
+    type ComponentID = Hashable
+    type DomainID = Hashable
+    type Property = Hashable
+    type Component = object
