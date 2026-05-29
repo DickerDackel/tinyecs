@@ -42,3 +42,5 @@ html_theme_options = {
         "color-api-name": "orange",
     }
 }
+
+nitpicky = False
