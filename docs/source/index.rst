@@ -7,6 +7,7 @@ tinyecs - The teeniest, tiniest python ECS
    introduction
    tutorial
    api
+   glossary
    license
 
 Index
