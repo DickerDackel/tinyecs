@@ -89,7 +89,8 @@ class RegistryError(Exception):
 def reset() -> None:
     """Remove everything registered in the ECS.
 
-    Use this to clear everything, e.g. before a new game
+    Use this to clear everything, e.g. before a new game or when restarting a
+    game state.
     """
 
     eidx.clear()
@@ -170,6 +171,7 @@ def create_entity(tag: EntityID = None,
     Hashable
         The entity ID.  Same as given if one is passed, otherwise a uuid4
     """
+
     eid = tag if tag else str(uuid4())
     eidx[eid] = {}
 
