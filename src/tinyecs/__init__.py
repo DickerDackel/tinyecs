@@ -173,7 +173,8 @@ def create_entity(tag: EntityID = None,
     """
 
     eid = tag if tag else str(uuid4())
-    eidx[eid] = {}
+    if eid not in eidx:
+        eidx[eid] = {}
 
     # Add optionally passed components
     if components:
