@@ -65,7 +65,17 @@ class UnknownArchetypeError(Exception):
 
 
 class RegistryError(Exception):
-    """Raised if an inconsistency is found in the internal ecs registry."""
+    """Raised if an inconsistency is found in the internal ecs registry.
+
+    :param error: The actual error message
+    :param eid: The entity ID of the defective registry entry
+    :param cid: The component ID of the defective registry entry
+    :param component: The component object of the defective registry entry
+    :param eid: The properties of the defective registry entry
+
+    Contains an error message and the registry objects that have been
+    identified as inconsistent.
+    """
 
     def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
         self.error = error
@@ -329,7 +339,7 @@ def remove_component(eid: EntityID, *cids: ComponentID) -> None:
 
 
 def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
-    """Add a system for the specifiied cids.
+    r"""Add a system for the specifiied cids.
 
     Parameters
     ----------
@@ -339,16 +349,16 @@ def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
 
         The prototype for the function is
 
-            fkt(delta_time, eid, *comps)
+            fkt(delta_time, eid, \*comps)
 
         where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
-        of the entity that matches, and *comps are all requested components for
+        of the entity that matches, and \*comps are all requested components for
         this specific entity.
 
         This function is called for every entity that matches all specified
         component ids.
 
-    *cids:
+    \*cids:
         The component ids that are required for this system
 
     Returns

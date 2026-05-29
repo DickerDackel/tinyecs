@@ -109,7 +109,8 @@ player = ecs.create_entity('player')  # gives you 'player' as ID
 ecs.remove_entity(eid)
 ```
 
-If an entity is removed, all references to its components are also dropped, but...  See "IMPORTANT" below at "Components"
+If an entity is removed, all references to its components are also dropped,
+but...  See "IMPORTANT" below.
 
 #### Components
 
@@ -312,14 +313,13 @@ class DemoSprite(pygame.sprite.Sprite):
         # Make sure, the sprite is properly initialized for sprite groups
         super().__init__(*groups)
 
-        # Size is random between 8 and 32 pixels in both dimensions
+        # Create a rectangle surface of 8-32 pixels on each side, filled with
+        # a random color.
         w, h = random() * 24 + 8, random() * 24 + 8
-
-        # Just set up a basic pygame sprite instance
         self.image = pygame.Surface((w, h))
         self.image.fill(choice(list(THECOLORS)))
 
-        # Note that we don't set the position!
+        # Note that we don't position that rect!
         self.rect = self.image.get_rect()
 
     def shutdown_(self):
@@ -335,14 +335,14 @@ this mostly resembles the `__init__` of an entity class.
 ```py
 from pygame import Vector2
 
-def create_box_entity(position):
+def create_box_entity(position, sprite_group):
     # Give sprites a random speed between 0 and +/-50px/s
     dx, dy = random() * 100 - 50, random() * 100 - 50
 
     e = ecs.create_entity()
     ecs.add_component(e, 'position', Vector2(position))
     ecs.add_component(e, 'momentum', Vector2(dx, dy))
-    ecs.add_component(e, 'sprite', DemoSprite)
+    ecs.add_component(e, 'sprite', DemoSprite(sprite_group))
 ```
 
 This function will be called if the mouse button is pressed to generate a
@@ -350,7 +350,8 @@ spray of new sprites at the given mouse position.
 
 #### The systems
 
-We already wrote the `momentum_system` above, but here again for completeness:
+We already wrote the `momentum_system` above, but I'll put it here here again for completeness:
+completeness:
 
 ```py
 # Make the world rect a bit larger than the screen, so sprites don't suddenly
@@ -373,12 +374,35 @@ def deadzone_system(dt, eid, position, *, world):
     ecs.remove_entity(eid)
 ```
 
+Note: A bit about how components are stored, and what the implication of that is:
+
+Under the hood, components are stored in a dict.  When the system is
+called, usually a reference to that dict entry is passed to the system function.
+
+You can now modify attributes of that component.  What you can not do, is
+just assigning a new value to the component itself, since you only got a
+reference to it.  That means you would replace the component within the
+scope of the system function, but the component in the registry would still
+be unchanged.
+
+If you need to actually replace the component, e.g. if it's an immutable
+object that's passed by value instead of reference, you need to re-add it
+to the entity instead of overwriting the component variable.
+
+.. code-block::
+
+  def take_damage_system(dt, eid, health, damage):
+      ecs.add_component(eid, 'health', health - damage)
+
+For semantic reasons, tinyecs also provides `update_component`, but that's
+literally an alias to the `add_component` function.
+
+
 #### Releasing entities on click
 
 The lines marked with `>` are additions to the game loop template all above.
 
 ```py
->   emitting = False
     running = True
     while running:
         dt = min(clock.tick(FPS) / 1000.0, DT_MAX)
@@ -387,19 +411,13 @@ The lines marked with `>` are additions to the game loop template all above.
             match e.type:
                 case pygame.QUIT:
                     running = False
-
->               case pygame.MOUSEBUTTONDOWN if e.button == 1:
->                   emitting = True
-
->               case pygame.MOUSEBUTTONUP if e.button == 1:
->                   emitting = False
-
                 case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
                     running = False
 
->       if emitting: 
+>       if pygame.mouse.get_pressed()[0]:
 >           for _ in range(10):
->               create_box_entity(pygame.mouse.get_pos())
+>               pos = pygame.mouse.get_pos()
+>               create_box_entity(pos, group)
 
         screen.fill('black')
 ```
@@ -413,7 +431,7 @@ The lines marked with `>` are additions to the game loop template all above.
 
     screen.fill('black')
 
->   # group.update(dt)  # Not needed
+>   # group.update(dt)  # Not needed, taken care by the systems
     group.draw(screen)
 
     pygame.display.flip()
@@ -499,7 +517,6 @@ screen = pygame.display.set_mode(SCREEN.size)
 clock = pygame.time.Clock()
 group = pygame.sprite.Group()
 
-emitting = False
 running = True
 while running:
     dt = min(clock.tick(FPS) / 1000.0, DT_MAX)
@@ -508,19 +525,13 @@ while running:
         match e.type:
             case pygame.QUIT:
                 running = False
-
-            case pygame.MOUSEBUTTONDOWN if e.button == 1:
-                emitting = True
-
-            case pygame.MOUSEBUTTONUP if e.button == 1:
-                emitting = False
-
             case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
                 running = False
 
-    if emitting:
+    if pygame.mouse.get_pressed()[0]:
         for _ in range(10):
-            create_box_entity(pygame.mouse.get_pos(), group)
+            pos = pygame.mouse.get_pos()
+            create_box_entity(pos, group)
 
     ecs.run_system(dt, momentum_system, 'momentum', 'position')
     ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
@@ -703,7 +714,6 @@ def main():
     clock = pygame.time.Clock()
     group = pygame.sprite.Group()
 
-    emitting = False
     running = True
     while running:
         dt = min(clock.tick(FPS) / 1000.0, DT_MAX)
@@ -712,19 +722,13 @@ def main():
             match e.type:
                 case pygame.QUIT:
                     running = False
-
-                case pygame.MOUSEBUTTONDOWN if e.button == 1:
-                    emitting = True
-
-                case pygame.MOUSEBUTTONUP if e.button == 1:
-                    emitting = False
-
                 case pygame.KEYDOWN if e.key == pygame.K_ESCAPE:
                     running = False
 
-        if emitting:
+        if pygame.mouse.get_pressed()[0]:
             for _ in range(10):
-                create_box_entity(pygame.mouse.get_pos(), group)
+                pos = pygame.mouse.get_pos()
+                create_box_entity(pos, group)
 
         ecs.run_system(dt, momentum_system, 'momentum', 'position')
         ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
