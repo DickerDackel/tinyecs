@@ -10,6 +10,7 @@ Primary functions
 .. autofunction:: tinyecs.create_entity
 .. autofunction:: tinyecs.add_component
 .. autofunction:: tinyecs.add_components
+.. autofunction:: tinyecs.remove_entity
 .. autofunction:: tinyecs.remove_component
 .. autofunction:: tinyecs.run_system
 
