@@ -105,26 +105,15 @@ def reset() -> None:
 def healthcheck() -> bool:
     """Perform a health check on the registry.
 
+    :returns: True if successful, RegistryError exception otherwise.
+    :raises RegistryError: If inconsistencies are found in the registry.
+
     This function checks if the cross references between the entity index and
     the component index are still bi-directional.
 
-    NOTE: This function is performance heavy and not designed to use in a system.
-    It's intended for debugging purposes only, e.g. after setting a breakpoint.
-
-    Returns
-    -------
-    bool
-        True if successful, RegistryError exception otherwise.
-
-    Raises
-    ------
-    RegistryError(error, eid, cid, component, other=None)
-        error       verbose error message
-        eid         id of entity
-        cid         id of component
-        component   component object
-        other       component in other index or None
-
+    .. note:: This function is performance heavy and not designed to use in a
+        system. It's intended for debugging purposes only, e.g. after setting a
+        breakpoint.
     """
 
     for eid in eidx:
@@ -152,24 +141,12 @@ def healthcheck() -> bool:
 def create_entity(tag: EntityID = None,
                   components: dict[ComponentID, Component] | None = None,
                   properties: _OptionalProperties = None) -> EntityID:
-    """Create a new entity
+    """Create a new entity.
 
-    Parameters
-    ----------
-    tag:
-        an optional ID for the entity, e.g. "player"
-        if no tag is passed, a uuid is generated
-
-    components:
-        A dict with component IDs as keys and components as values (see add_component)
-
-    properties:
-        An iterable of properties
-
-    Returns
-    -------
-    Hashable
-        The entity ID.  Same as given if one is passed, otherwise a uuid4
+    :param tag: an optional ID for the entity, e.g. "player" if no tag is passed, a uuid is generated
+    :param components: A dict with component IDs as keys and components as values (see add_component)
+    :param properties: An iterable of properties
+    :return: The entity ID.  Same as given if one is passed, otherwise a uuid4
     """
 
     eid = tag if tag else str(uuid4())
@@ -189,19 +166,13 @@ def create_entity(tag: EntityID = None,
 def remove_entity(eid: EntityID) -> None:
     """Remove an entity from the system.
 
+    :param eid: The entity ID
+    :returns: None
+
     Removes all bindings to components and the entity_id itself from the
     registry.
 
-    non-existent entity_ids will be silently ignored
-
-    Parameters
-    ----------
-    eid: hashable
-        The entity ID
-
-    Returns
-    -------
-    None
+    .. note:: Non-existent entity_ids will be silently ignored.
     """
 
     # Ignore unknown eids, since we're removing anyways
@@ -228,32 +199,15 @@ def remove_entity(eid: EntityID) -> None:
 def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> ComponentID:
     """Add a component to the registry.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity id to add the component to
+    :param eid: The entity id to add the component to
+    :param cid: An identifier for the component This will be used to assign systems to entities
+    :param comp: The actual data object A comp can be anything that holds data, just a string, e.g. a name, a SimpleNamespace, a dataclass, ...
+    :return: The `cid` that was put in as an argument.
+    :raises UnknownEntityError: If the `eid` doesn't exist in the registry.
 
-    cid: hashable
-        An identifier for the component This will be used to assign systems to
-        entities
-
-    comp: *
-        The actual data object A comp can be anything that holds data, just a
-        string, e.g. a name, a SimpleNamespace, a dataclass, ...
-
-        Note: Technically, there is no reason a comp object couldn't have
-        methods, but by concept, functionality is reserved for the System
+    .. note:: Technically, there is no reason a comp object couldn't
+        have methods, but by concept, functionality is reserved for the System
         working on the components, not the component itself.
-
-    Returns
-    -------
-    cid: hashable
-        The `cid` that was put in as an argument.
-
-    Raises
-    ------
-    UnknownEntityError
-        If the `eid` doesn't exist in the registry.
     """
 
     if eid not in eidx:
@@ -285,40 +239,27 @@ update_component = add_component
 
 
 def add_components(eid: EntityID, components: dict[ComponentID, Component]) -> list[ComponentID]:
-    """A convenience wrapper around add_component
+    """A convenience wrapper around add_component.
 
-    Parameters
-    ----------
-    components:
-        A dict with component IDs as keys and components as values (see add_component)
-
-    Returns
-    -------
-    None
+    :param components: A dict with component IDs as keys and components as values (see add_component)
+    :return: None
     """
 
     return [add_component(eid, cid, comp) for cid, comp in components.items()]
 
 
 def remove_component(eid: EntityID, *cids: ComponentID) -> None:
-    """Remove one or more components from an entity.
+    r"""Remove one or more components from an entity.
 
-    Parameters
-    ----------
-    eid:
-        The entity to remove the component from
+    :param eid: The entity to remove the component from
+    :param cids: The component ids to remove
+    :return: None
 
-    cids:
-        The component ids to remove
-
-    If the component has a shutdown_ attribute, it is assumed to be a list of
+    If the component has a shutdown\_ attribute, it is assumed to be a list of
     zero parameter functions to be called in order.
 
-    Note: If the entity no longer exists, the error is silently ignored.
+    .. note:: If the entity no longer exists, the error is silently ignored.
 
-    Returns
-    -------
-    None
     """
 
     for cid in cids:
@@ -344,33 +285,22 @@ def remove_component(eid: EntityID, *cids: ComponentID) -> None:
 def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
     r"""Add a system for the specifiied cids.
 
-    Parameters
-    ----------
+    :param fkt: The system function
+    :param cids: The component ids that are required for this system
+    :return: None
 
-    fkt:
-        The system function
+    The prototype for the function is::
 
-        The prototype for the function is
+        fkt(delta_time, eid, *comps)
 
-            fkt(delta_time, eid, \*comps)
+    where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
+    of the entity that matches, and \*comps are all requested components for
+    this specific entity.
 
-        where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
-        of the entity that matches, and \*comps are all requested components for
-        this specific entity.
+    This function is called for every entity that matches all specified
+    component ids.
 
-        This function is called for every entity that matches all specified
-        component ids.
-
-    \*cids:
-        The component ids that are required for this system
-
-    Returns
-    -------
-    None
-
-    Note
-    ----
-    Registering a system automatically creates an `archetype` from the given `cids`
+    .. note:: Registering a system automatically creates an `archetype` from the given `cids`
     """
 
     create_archetype(*cids)
@@ -380,21 +310,12 @@ def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
 def remove_system(fkt: SystemFunction) -> None:
     """Remove the given function from the registry.
 
-    Parameters
-    ----------
-    fkt:
-        The system function
+    :param fkt: The system function
+    :return: None
 
     Remove the match for this function from the registry
 
-    Returns
-    -------
-    None
-
-    Note
-    ----
-    In contrast to `add_system`, an existing `archetype` is not automatically
-    removed.
+    .. note:: In contrast to `add_system`, an existing `archetype` is not automatically removed.
     """
 
     for domain in didx:
@@ -410,21 +331,13 @@ def remove_system(fkt: SystemFunction) -> None:
 def add_system_to_domain(domain: DomainID, system: SystemFunction) -> None:
     """Create or extend a domain with the given system.
 
+    :param system: The system function
+    :return: None
+
     Domains are collections of systems that can run with a single function
     call run_domain.
 
-    Note that the system must first be registered with add_system
-
-        add_system_to_domain('render-phase', draw_system)
-
-    Parameters
-    ----------
-    system: Callable
-        The system function
-
-    Returns
-    -------
-    None
+    .. important:: The system must first be registered with add_system.
     """
 
     if domain not in didx:
@@ -437,18 +350,10 @@ def add_system_to_domain(domain: DomainID, system: SystemFunction) -> None:
 def remove_system_from_domain(domain: DomainID, system: SystemFunction) -> None:
     """Remove a registered system from the given domain.
 
-    Parameters
-    ----------
-    system: Callable
-        The system function
+    :param system: The system function
+    :return: None
 
-    Returns
-    -------
-    None
-
-    Note
-    ----
-    If the system is not in the domain, the error is silently ignored.
+    .. note:: If the system is not in the domain, the error is silently ignored.
     """
 
     if domain not in didx:
@@ -462,21 +367,12 @@ def remove_system_from_domain(domain: DomainID, system: SystemFunction) -> None:
 def has(eid: EntityID, has_properties: _OptionalProperties = None) -> bool:
     """Check if the given eid is valid.
 
-    There is no reason to not use `eid in tinyecs.eidx`.  This is just for
-    people who prefer a functional interface.
+    :param eid: The entity to verify
+    :param has_properties: Optional set of required properties
+    :return: True if the eid is valid
 
-    Parameters
-    ----------
-    eid
-        The entity to verify
-
-    has_properties
-        Optional set of required properties
-
-    Returns
-    -------
-    bool
-        True if the eid is valid
+    .. note:: There is no reason to not use `eid in tinyecs.eidx`.  This is
+        just for people who prefer a functional interface.
     """
 
     if has_properties is None:
@@ -487,17 +383,10 @@ def has(eid: EntityID, has_properties: _OptionalProperties = None) -> bool:
 
 
 def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
-    """check if entity eid has all listed cids.
+    """Check if entity eid has all listed cids.
 
-    Parameters
-    ----------
-    *cids:
-        All component ids that need to match
-
-    Returns
-    -------
-    bool
-        True if all given cids are available for the specified eid
+    :param cids: All component ids that need to match
+    :return: True if all given cids are available for the specified eid
     """
 
     e = eidx[eid]
@@ -509,21 +398,11 @@ def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
 
 
 def eids_by_cids(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[tuple[EntityID, list[Component]]]:
-    """get eids that match all specified cids
+    """Get eids that match all specified cids.
 
-    Parameters
-    ----------
-
-    *cids:
-        All component ids that need to match
-
-    has_properties: set|tuple|list
-        Optional set/tuple/list of required properties
-
-    Returns
-    -------
-    list
-        A list of tuples of entity IDs and components
+    :param cids: All component ids that need to match
+    :param as_properties: Optional set/tuple/list of required properties
+    :return: A list of tuples of entity IDs and components
     """
 
     res = []
@@ -550,22 +429,11 @@ def eids_by_cids(*cids: ComponentID, has_properties: _OptionalProperties = None)
 
 
 def cids_of_eid(eid: EntityID) -> list[ComponentID]:
-    """Return the list of component IDs of the specified entity
+    """Return the list of component IDs of the specified entity.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity ID
-
-    Returns
-    -------
-    list
-        List of component IDs of this entity
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
+    :param eid: The entity ID
+    :return: List of component IDs of this entity
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     if eid not in eidx:
@@ -577,31 +445,16 @@ def cids_of_eid(eid: EntityID) -> list[ComponentID]:
 def comps_of_eid(eid: EntityID, *cids: ComponentID) -> list[Component]:
     """Get components from the eid for the specified cids.
 
+    :param eid: the entity id from which to get the components
+    :param cids: the list of components to fetch
+    :return: The (filtered) components of eid
+    :raises UnknownEntityError: If the entity is not registered (anymore).
+    :raises UnknownComponentError: If the passed component couldn't be found.
+
     While cids_of_eid gets component IDs, this function now gets the actual
     components containing the data.
 
-    if cids is empty or None, returns all components of eid.
-
-    Parameters
-    ----------
-    eid:
-        the entity id from which to get the components
-
-    cids:
-        the list of components to fetch
-
-    Returns
-    -------
-    list
-        The (filtered) components of eid
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
-
-    UnknownComponentError
-        If the passed component couldn't be found.
+    .. note:: If cids is empty or None, returns all components of eid.
     """
 
     if eid not in eidx:
@@ -619,18 +472,9 @@ def comps_of_eid(eid: EntityID, *cids: ComponentID) -> list[Component]:
 def comp_of_eid(eid: EntityID, cid: ComponentID) -> Component:
     """Get a single component from an entity.
 
-    Parameters
-    ----------
-    eid:
-        the entity id from which to get the component
-
-    cid:
-        the component id to filter for
-
-    Returns
-    -------
-    component: object
-        The requested component of the given entity ID
+    :param eid: The entity id from which to get the component
+    :param cid: The component id to filter for
+    :return: The requested component of the given entity ID
     """
 
     return comps_of_eid(eid, cid)[0]
@@ -639,15 +483,8 @@ def comp_of_eid(eid: EntityID, cid: ComponentID) -> Component:
 def eid_of_comp(comp: Component) -> set(EntityID):
     """Find the entity id for object comp.
 
-    Parameters
-    ----------
-    comp:
-        the component to find the entity of
-
-    Returns
-    -------
-    entity_id
-        The entity_id the given component belongs to
+    :param comp: The component to find the entity of
+    :return: The entity_id the given component belongs to
     """
 
     return oidx[id(comp)]
@@ -656,34 +493,19 @@ def eid_of_comp(comp: Component) -> set(EntityID):
 def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
     """Get the cid of a component.
 
+    :param eid: The entity ID
+    :param comp: The component to identify
+    :return: The cid that the given component was added under.
+    :raises UnknownEntityError: If the entity is not registered (anymore).
+    :raises UnknownComponentError: If the passed component couldn't be found.
+
     A system only receives an actual component, but cannot know under which
     name this was targetted.  This function searches the cid of the given
     component.
 
-    Note: This is a relatively expensive operation, but since it will mostly
-    be used to clean up old connections between entities, it should be a
-    one-shot and worth the price.
-
-    Parameters
-    ----------
-    eid: hashable
-        The entity ID
-
-    comp: object
-        The component to identify
-
-    Returns
-    -------
-    hashable
-        The cid that the given component was added under.
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
-
-    UnknownComponentError
-        If the passed component couldn't be found.
+    .. note:: This is a relatively expensive operation, but since it will
+        mostly be used to clean up old connections between entities, it should
+        be a one-shot and worth the price.
     """
 
     if not has(eid):
@@ -704,19 +526,11 @@ def run_system(dt: float,
                **kwargs: dict[str, Any]) -> _RunSystemResult:
     """Run the system for the matching cids.
 
-    Parameters
-    ----------
-    dt:
-        delta time since the last frame (miliseconds)
-
-    fkt:
-        the actual system function
-
-    *cids:
-        the components to run on
-
-    has_properties:
-        set of required properties
+    :param dt: delta time since the last frame (miliseconds)
+    :param fkt: the actual system function
+    :param cids: the components to run on
+    :param has_properties: set of required properties
+    :return: A dictionary with entity IDs as key and the function result as value
 
     The fkt gets the list of all entities that contain the listed
     components.  The list can further be narrowed down my filtering for given
@@ -725,11 +539,6 @@ def run_system(dt: float,
 
     This function is a direct call.  Alternatively, you can use add_system
     combined with run_all_systems or run_domain below.
-
-    Returns
-    -------
-    dict
-        A dictionary with entity IDs as key and the function result as value
     """
 
     at = tuple(cids)
@@ -750,21 +559,13 @@ def run_system(dt: float,
 
 
 def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
-    """Run all registered systems
+    """Run all registered systems.
+
+    :param dt: Delta time
+    :return: A dict of function as key, and the result of run_system as value
 
     This calls above run_system for all registered systems with their
     appropriate components.
-
-    Parameters
-    ----------
-
-    dt:
-        delta time
-
-    Returns
-    -------
-    dict
-        A dict of function as key, and the result of run_system as value
     """
 
     return {fkt: run_system(dt, fkt, *comps)
@@ -774,17 +575,10 @@ def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
 def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemResult]:
     """Run all systems within domain.
 
+    :param dt: Delta time
+    :return: A dict of function as key, and the result of run_system as value
+
     This is the same as run_all_systems, but limited to a specific domain.
-
-    Parameters
-    ----------
-    dt:
-        delta time
-
-    Returns
-    -------
-    dict
-        A dict of function as key, and the result of run_system as value
     """
 
     if domain not in didx:
@@ -796,6 +590,9 @@ def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemRe
 
 def create_archetype(*cids: ComponentID) -> None:
     """Create an archetype from the provided cids.
+
+    :param cids The list of cids that define the archetype.
+    :return: None
 
     An archetype is a fixed combination of components.  Each time a component
     is added or removed from an entity, that entity and its components are
@@ -810,22 +607,12 @@ def create_archetype(*cids: ComponentID) -> None:
     The cost to insert/remove an entity into/from the archetype is a rather
     small operation that is only done when the entity is changed.
 
-    Note
-    ----
-    Archetypes are created automatically as soon as a system runs for the
-    first time.  Manually creating an archetype is only useful if a function
-    wishes to work on a set of entities outside the `run_system` framework.
+    .. note:: Archetypes are created automatically as soon as a system runs
+        for the first time.  Manually creating an archetype is only useful if
+        a function wishes to work on a set of entities outside the
+        `run_system` framework.
 
-    Parameters
-    ----------
-    cids
-        The list of cids that define the archetype.
-
-        Note: Order is important, since the system relies on it.
-
-    Returns
-    -------
-    None
+    .. important: The order of the given cids is important, since the system relies on it.
     """
 
     at = tuple(cids)
@@ -838,14 +625,8 @@ def create_archetype(*cids: ComponentID) -> None:
 def remove_archetype(cids: Iterable[ComponentID]) -> None:
     """Remove an archetype from the system. (See `add_archetype`).
 
-    Parameters
-    ----------
-    cids
-        The list of component IDs that construct the archetype.
-
-    Returns
-    -------
-    None
+    :param cids: The list of component IDs that construct the archetype.
+    :return: None
     """
 
     at = tuple(cids)
@@ -855,10 +636,7 @@ def remove_archetype(cids: Iterable[ComponentID]) -> None:
 def add_to_archetype(eid: EntityID) -> None:
     """Make sure, eid is registered with all appropriate archetypes.
 
-    Parameters
-    ----------
-    eids
-        The entity ID to add to the archetype
+    :param eids: The entity ID to add to the archetype
 
     There should be no need to call this function manually.  It's called
     internally, when a new component is added to an entity which makes this
@@ -875,13 +653,8 @@ def add_to_archetype(eid: EntityID) -> None:
 def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None:
     """Make sure, eid is only registered with appropriate archetypes.
 
-    Parameters
-    ----------
-    eids
-        The entity ID to remove from the archetype
-
-    cid
-        An optional component ID.
+    :param eids: The entity ID to remove from the archetype
+    :param cid: An optional component ID.
 
     There should be no need to call this function manually.  It's called
     internally, when a component is removed from an entity, so that the entity
@@ -896,28 +669,14 @@ def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None
 def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[_EntityComponentsBundle]:
     """Return the given archetype.
 
-    Primarily used by `run_system`.
+    :param cids The cids that define the archetype.
+    :param has_properties Optional set of required properties
+    :return: A list of tuples of (eid, components)
+    :raises UnknownArchetypeError: If the given archetype doesn't exist.
+
+    Primarily used internally by `run_system`.
 
     Returns a list of tuples consisting of eid and components.
-
-    Parameters
-    ----------
-    cids
-        The cids that define the archetype.
-
-    has_properties
-        Optional set of required properties
-
-    Returns
-    -------
-    List[tuple[Hashable, list[object]]]
-
-        A list of tuples of (eid, components)
-
-    Raises
-    ------
-    UnknownArchetypeError
-        If the given archetype doesn't exist.
     """
 
     at = tuple(cids)
@@ -936,22 +695,10 @@ def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties =
 def set_property(eid: EntityID, property: Property) -> None:
     """Add a property to the given entity.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity id to add the component to
-
-    property: hashable
-        A flag or tag that can be filtered, e.g. 'is_drawable'
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
+    :param eid: The entity id to add the component to
+    :param property: A flag or tag that can be filtered, e.g. 'is_drawable'
+    :return: None
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     if eid not in eidx:
@@ -963,13 +710,8 @@ def set_property(eid: EntityID, property: Property) -> None:
 def set_properties(eid: EntityID, properties: Iterable[Property]) -> None:
     """Add a list of properties to the given entity.
 
-    Parameters
-    ----------
-    eid
-        The entity ID to add the properties to.
-
-    property:
-        The list of properties to add.
+    :param eid: The entity ID to add the properties to.
+    :param property: The list of properties to add.
 
     This is just a convenience wrapper around `set_property`.
     """
@@ -980,22 +722,10 @@ def set_properties(eid: EntityID, properties: Iterable[Property]) -> None:
 def has_property(eid: EntityID, prop: Property) -> bool:
     """Checks if the given entity has that property.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity id to add the component to
-
-    property: hashable
-        The property to check for
-
-    Returns
-    -------
-    bool
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
+    :param eid: The entity id to add the component to
+    :param property: The property to check for
+    :return: True if the property is set for the given entity
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     if eid not in eidx:
@@ -1007,22 +737,10 @@ def has_property(eid: EntityID, prop: Property) -> bool:
 def remove_property(eid: EntityID, prop: Property) -> None:
     """Removes a property from the given entity.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity id to add the component to
-
-    property: hashable
-        The property to remove
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
+    :param eid: The entity id to add the component to
+    :param property: The property to remove
+    :return: None
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     if eid not in eidx:
@@ -1034,19 +752,9 @@ def remove_property(eid: EntityID, prop: Property) -> None:
 def clear_properties(eid: EntityID) -> None:
     """Removes all properties from the given entity.
 
-    Parameters
-    ----------
-    eid: hashable
-        The entity id to add the component to
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    UnknownEntityError
-        If the entity is not registered (anymore).
+    :param eid: The entity id to add the component to
+    :return: None
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     if eid not in eidx:
@@ -1058,15 +766,8 @@ def clear_properties(eid: EntityID) -> None:
 def eids_by_property(*properties: Property) -> list[EntityID]:
     """Get a list of entities that match all given properties.
 
-    Parameters
-    ----------
-    *properties:
-        All properties that need to match
-
-    Returns
-    -------
-    list[EntityID]
-        Entities matching the given properties
+    :param properties: All properties that need to match
+    :return: Entities matching the given properties
 
     """
 
@@ -1078,14 +779,10 @@ def eids_by_property(*properties: Property) -> list[EntityID]:
 def purge_by_property(*properties: Property) -> None:
     """Purge entities that match all given properties.
 
+    :param properties: All properties that need to match
+
     This is useful to clean up all entities belonging to a sub state without
     impacting the remaining registry.
-
-    Parameters
-    ----------
-
-    *properties:
-        All properties that need to match
     """
 
     for eid in eids_by_property(*properties):
