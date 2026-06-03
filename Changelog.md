@@ -1,3 +1,9 @@
+# v0.3.4
+- Bugfix: Empty archetype was created with full component list instead of empty.
+- Bugfix: Don't nuke the entity when calling create_entity on an existing eid.
+- Docs: Changed docstrings to reST
+- Docs: Far more complete
+
 # v0.3.3
 
 - Sphinx docs
