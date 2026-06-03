@@ -619,7 +619,7 @@ def create_archetype(*cids: ComponentID) -> None:
     if at in archetype:
         return
 
-    archetype[at] = dict(eids_by_cids(*cids))
+    archetype[at] = dict(eids_by_cids(*cids)) if at else {eid: [] for eid in eidx}
 
 
 def remove_archetype(cids: Iterable[ComponentID]) -> None:
@@ -645,9 +645,12 @@ def add_to_archetype(eid: EntityID) -> None:
 
     have_comps = set(cids_of_eid(eid))
     for at in archetype:
-        s = set(at)
-        if s <= have_comps:
-            archetype[at][eid] = comps_of_eid(eid, *at)
+        if not at:
+            archetype[at][eid] = []
+        else:
+            s = set(at)
+            if s <= have_comps:
+                archetype[at][eid] = comps_of_eid(eid, *at)
 
 
 def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None:

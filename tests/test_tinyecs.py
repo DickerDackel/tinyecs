@@ -165,6 +165,15 @@ def test_run_system():
     assert ecs.eidx[e2]['health'].health == 900
     assert ecs.cidx['health'][e2].health == 900
 
+    worked = False
+
+    def sys_no_args(dt, eid):
+        nonlocal worked
+        worked = True
+
+    ecs.run_system(0, sys_no_args)
+    assert worked
+
 
 def test_run_all_systems():
     e1, e2 = setup()
