@@ -591,7 +591,7 @@ def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemRe
 def create_archetype(*cids: ComponentID) -> None:
     """Create an archetype from the provided cids.
 
-    :param cids The list of cids that define the archetype.
+    :param cids: The list of cids that define the archetype.
     :return: None
 
     An archetype is a fixed combination of components.  Each time a component
@@ -672,8 +672,8 @@ def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None
 def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[_EntityComponentsBundle]:
     """Return the given archetype.
 
-    :param cids The cids that define the archetype.
-    :param has_properties Optional set of required properties
+    :param cids: The cids that define the archetype.
+    :param has_properties: Optional set of required properties
     :return: A list of tuples of (eid, components)
     :raises UnknownArchetypeError: If the given archetype doesn't exist.
 
