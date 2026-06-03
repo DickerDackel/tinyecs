@@ -1,8 +1,8 @@
 [project]
 name = "tinyecs"
 description = "The teeniest, tiniest ECS system"
-version = "0.3.4"
-readme = "README.md"
+version = "0.3.5"
+readme = "README.rst"
 
 authors = [
     { name="Michael Lamertz", email="michael.lamertz@gmail.com" }
