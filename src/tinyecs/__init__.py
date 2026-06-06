@@ -519,28 +519,8 @@ def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
     raise UnknownComponentError(f'Component {comp} not found in entity {eid}')
 
 
-def run_system(dt: float,
-               fkt: SystemFunction,
-               *cids: ComponentID,
-               has_properties: _OptionalProperties = None,
-               **kwargs: dict[str, Any]) -> _RunSystemResult:
-    """Run the system for the matching cids.
-
-    :param dt: delta time since the last frame (miliseconds)
-    :param fkt: the actual system function
-    :param cids: the components to run on
-    :param has_properties: set of required properties
-    :return: A dictionary with entity IDs as key and the function result as value
-
-    The fkt gets the list of all entities that contain the listed
-    components.  The list can further be narrowed down my filtering for given
-    properties.  Then it runs the function for every entity and the requested
-    components, passing dt as heartbeat.
-
-    This function is a direct call.  Alternatively, you can use add_system
-    combined with run_all_systems or run_domain below.
-    """
-
+def _create_call_list(cids: tuple[ComponentID],
+                      has_properties: _OptionalProperties) -> list[tuple[EntityID, Component]]:
     at = tuple(cids)
     if at not in archetype:
         create_archetype(*cids)
@@ -555,7 +535,64 @@ def run_system(dt: float,
                      if property_filter <= plist[eid]]
     else:
         call_list = [(eid, *parms) for eid, parms in adict.items()]
-    return {eid: fkt(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
+    return call_list
+
+
+def run_system(dt: float,
+               fkt: SystemFunction,
+               *cids: ComponentID,
+               has_properties: _OptionalProperties = None,
+               **kwargs: dict[str, Any]) -> _RunSystemResult:
+    """Run the system for the matching cids.
+
+    :param dt: delta time since the last frame (miliseconds)
+    :param fkt: the actual system function
+    :param cids: the components to run on
+    :param has_properties: set of required properties
+    :return: A dictionary with entity IDs as key and the function result as value
+
+    For every entity that has all the listed components, ``fn`` is run.  The
+    function prototype of ``fn`` is::
+
+        def callback(dt: float, eid: EntityID, *comps: Component) -> Any
+
+    The list can further be narrowed down my filtering for given properties.
+
+    This function is a direct call.  Alternatively, you can use add_system
+    combined with run_all_systems or run_domain below.
+    """
+
+    call_list = _create_call_list(cids, has_properties)
+    return {eid: fn(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
+
+
+def run_bulk_system(dt: float,
+                    fn: SystemFunction,
+                    *cids: ComponentID,
+                    has_properties: _OptionalProperties = None,
+                    **kwargs: dict[str, Any]) -> Any:
+    """Run the bulk system for all entities with matching cids.
+
+    :param dt: delta time since the last frame (miliseconds)
+    :param fn: the actual system function
+    :param cids: the components to run on
+    :param has_properties: set of required properties
+    :return: A dictionary with entity IDs as key and the function result as value
+
+    The fn is called with a list of entity ID and components tuples of all
+    entities that contain the listed components.  The list can further be
+    narrowed down my filtering for given properties.
+
+    ``fn`` is called given a list of ``(EntityID, (components,...))``. In
+    contrast to ``run_system``, the user is responsible to loop over the list.
+
+    The prototype of ``fn`` is::
+
+        def callback(dt: call_list: list[tuple[EntityID, list[Component]]]) -> Any
+    """
+
+    call_list = _create_call_list(cids, has_properties)
+    return fn(dt, call_list, **kwargs)
 
 
 def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:

@@ -31,6 +31,8 @@ ECS Management
 Running systems in bulk
 -----------------------
 
+.. autofunction:: tinyecs.run_bulk_system
+
 .. autofunction:: tinyecs.add_system
 .. autofunction:: tinyecs.remove_system
 .. autofunction:: tinyecs.run_all_systems

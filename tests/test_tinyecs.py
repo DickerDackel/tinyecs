@@ -175,6 +175,19 @@ def test_run_system():
     assert worked
 
 
+def test_run_bulk_system():
+    ecs.reset()
+    for i in range(10):
+        eid = ecs.create_entity()
+        ecs.add_component(eid, 'number', i)
+
+    def bulk_runner(dt, call_list):
+        assert len(call_list) == 10
+        return sum([i for eid, i in call_list])
+
+    assert ecs.run_bulk_system(0, bulk_runner, 'number') == 45
+
+
 def test_run_all_systems():
     e1, e2 = setup()
     ecs.add_system(move_system, 'pos', 'velocity')

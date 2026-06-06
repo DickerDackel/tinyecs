@@ -226,6 +226,12 @@ objects with these two components will have their position updated.
 
 So the system is basically the ``update(dt)`` function in an OO driven game.
 
+.. note::
+    If you prefer to loop over the list of entities yourself, instead of your
+    system being called for each entity individually, theren is
+    :func:`tinyecs.run_bulk_system`, which gets the same arguments as
+    ``run_system``, but will pass the full list to the system.
+
 At this point you might get the feeling, that you will have a very large list
 of systems in a big block in your game loop, and that's exactly right.  You
 either hate that, which is fine, so the option is either to go back to an OO
