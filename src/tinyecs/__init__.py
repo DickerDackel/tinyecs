@@ -282,16 +282,16 @@ def remove_component(eid: EntityID, *cids: ComponentID) -> None:
                 obj.shutdown_()
 
 
-def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
+def add_system(fn: SystemFunction, *cids: ComponentID) -> None:
     r"""Add a system for the specifiied cids.
 
-    :param fkt: The system function
+    :param fn: The system function
     :param cids: The component ids that are required for this system
     :return: None
 
     The prototype for the function is::
 
-        fkt(delta_time, eid, *comps)
+        fn(delta_time, eid, *comps)
 
     where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
     of the entity that matches, and \*comps are all requested components for
@@ -304,13 +304,13 @@ def add_system(fkt: SystemFunction, *cids: ComponentID) -> None:
     """
 
     create_archetype(*cids)
-    sidx[fkt] = cids
+    sidx[fn] = cids
 
 
-def remove_system(fkt: SystemFunction) -> None:
+def remove_system(fn: SystemFunction) -> None:
     """Remove the given function from the registry.
 
-    :param fkt: The system function
+    :param fn: The system function
     :return: None
 
     Remove the match for this function from the registry
@@ -319,11 +319,11 @@ def remove_system(fkt: SystemFunction) -> None:
     """
 
     for domain in didx:
-        remove_system_from_domain(domain, fkt)
+        remove_system_from_domain(domain, fn)
 
     # Ignore unregistered systems, since we're removing anyways
     try:
-        del sidx[fkt]
+        del sidx[fn]
     except KeyError:
         pass
 
@@ -539,14 +539,14 @@ def _create_call_list(cids: tuple[ComponentID],
 
 
 def run_system(dt: float,
-               fkt: SystemFunction,
+               fn: SystemFunction,
                *cids: ComponentID,
                has_properties: _OptionalProperties = None,
                **kwargs: dict[str, Any]) -> _RunSystemResult:
     """Run the system for the matching cids.
 
     :param dt: delta time since the last frame (miliseconds)
-    :param fkt: the actual system function
+    :param fn: the actual system function
     :param cids: the components to run on
     :param has_properties: set of required properties
     :return: A dictionary with entity IDs as key and the function result as value
@@ -605,8 +605,8 @@ def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
     appropriate components.
     """
 
-    return {fkt: run_system(dt, fkt, *comps)
-            for fkt, comps in sidx.items()}
+    return {fn: run_system(dt, fn, *comps)
+            for fn, comps in sidx.items()}
 
 
 def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemResult]:
@@ -621,8 +621,8 @@ def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemRe
     if domain not in didx:
         return {}
 
-    return {fkt: run_system(dt, fkt, *sidx[fkt])
-            for fkt in didx[domain]}
+    return {fn: run_system(dt, fn, *sidx[fn])
+            for fn in didx[domain]}
 
 
 def create_archetype(*cids: ComponentID) -> None:
