@@ -1,3 +1,7 @@
+# v0.3.6
+- New API: run_bulk_system
+- Cosmetics: replace germanism `fkt` with `fn`
+
 # v0.3.5
 - pyproject.toml still pointed to README.md, thus no introduction on pypi
 
