@@ -24,7 +24,7 @@ type DomainID = Hashable
 type Property = Hashable
 type Component = object
 
-type _EntityComponentsBundle = tuple[EntityID, list[Component]]
+type EntityComponentsBundle = tuple[EntityID, list[Component]]
 type _OptionalProperties = Iterable[Property] | None
 type _RunSystemResult = dict[EntityID, Any]
 
@@ -706,7 +706,7 @@ def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None
             del adict[eid]
 
 
-def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[_EntityComponentsBundle]:
+def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties = None) -> list[EntityComponentsBundle]:
     """Return the given archetype.
 
     :param cids: The cids that define the archetype.
