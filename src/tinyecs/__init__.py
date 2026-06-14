@@ -592,7 +592,7 @@ def run_bulk_system(dt: float,
     """
 
     call_list = _create_call_list(cids, has_properties)
-    return fn(dt, call_list, **kwargs)
+    return fn(dt, call_list, **kwargs) if call_list else None
 
 
 def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
