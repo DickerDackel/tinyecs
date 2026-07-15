@@ -32,7 +32,7 @@ type _RunSystemResult = dict[EntityID, Any]
 # The typehinting system can't work with functions using *args, **kwargs.
 # This solution comes from https://docs.python.org/3/library/typing.html#annotating-callable-objects
 class SystemFunction(Protocol):
-    def __call__(self, dt: float, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, object]) -> Any: ...
+    def __call__(self, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, object]) -> Any: ...
 
 
 eidx = {}  # entity index
@@ -538,14 +538,12 @@ def _create_call_list(cids: tuple[ComponentID],
     return call_list
 
 
-def run_system(dt: float,
-               fn: SystemFunction,
+def run_system(fn: SystemFunction,
                *cids: ComponentID,
                has_properties: _OptionalProperties = None,
                **kwargs: dict[str, Any]) -> _RunSystemResult:
     """Run the system for the matching cids.
 
-    :param dt: delta time since the last frame (miliseconds)
     :param fn: the actual system function
     :param cids: the components to run on
     :param has_properties: set of required properties
@@ -554,7 +552,7 @@ def run_system(dt: float,
     For every entity that has all the listed components, ``fn`` is run.  The
     function prototype of ``fn`` is::
 
-        def callback(dt: float, eid: EntityID, *comps: Component) -> Any
+        def callback(eid: EntityID, *comps: Component) -> Any
 
     The list can further be narrowed down my filtering for given properties.
 
@@ -563,17 +561,15 @@ def run_system(dt: float,
     """
 
     call_list = _create_call_list(cids, has_properties)
-    return {eid: fn(dt, eid, *parms, **kwargs) for eid, *parms in call_list}
+    return {eid: fn(eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
-def run_bulk_system(dt: float,
-                    fn: SystemFunction,
+def run_bulk_system(fn: SystemFunction,
                     *cids: ComponentID,
                     has_properties: _OptionalProperties = None,
                     **kwargs: dict[str, Any]) -> Any:
     """Run the bulk system for all entities with matching cids.
 
-    :param dt: delta time since the last frame (miliseconds)
     :param fn: the actual system function
     :param cids: the components to run on
     :param has_properties: set of required properties
@@ -588,31 +584,29 @@ def run_bulk_system(dt: float,
 
     The prototype of ``fn`` is::
 
-        def callback(dt: call_list: list[tuple[EntityID, list[Component]]]) -> Any
+        def callback(call_list: list[tuple[EntityID, list[Component]]]) -> Any
     """
 
     call_list = _create_call_list(cids, has_properties)
-    return fn(dt, call_list, **kwargs) if call_list else None
+    return fn(call_list, **kwargs) if call_list else None
 
 
-def run_all_systems(dt: float) -> dict[SystemFunction, _RunSystemResult]:
+def run_all_systems(**kwargs) -> dict[SystemFunction, _RunSystemResult]:
     """Run all registered systems.
 
-    :param dt: Delta time
     :return: A dict of function as key, and the result of run_system as value
 
     This calls above run_system for all registered systems with their
     appropriate components.
     """
 
-    return {fn: run_system(dt, fn, *comps)
+    return {fn: run_system(fn, *comps, **kwargs)
             for fn, comps in sidx.items()}
 
 
-def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemResult]:
+def run_domain(domain: DomainID, **kwargs) -> dict[SystemFunction, _RunSystemResult]:
     """Run all systems within domain.
 
-    :param dt: Delta time
     :return: A dict of function as key, and the result of run_system as value
 
     This is the same as run_all_systems, but limited to a specific domain.
@@ -621,7 +615,7 @@ def run_domain(dt: float, domain: DomainID) -> dict[SystemFunction, _RunSystemRe
     if domain not in didx:
         return {}
 
-    return {fn: run_system(dt, fn, *sidx[fn])
+    return {fn: run_system(fn, *sidx[fn], **kwargs)
             for fn in didx[domain]}
 
 

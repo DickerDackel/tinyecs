@@ -28,20 +28,20 @@ class Ping:
     ack: bool = False
 
 
-def wounding_system(dt, eid, health):
+def wounding_system(eid, health, **kwargs):
     health.health -= 100
     return health.health
 
 
-def stats_system(dt, eid, name, health):
-    return f'{dt=}, {eid=}, {name.name=}, {health.health=}'
+def stats_system(eid, name, health, **kwargs):
+    return f'{eid=}, {name.name=}, {health.health=}'
 
 
-def ping_system(dt, eid, ping):
+def ping_system(eid, ping):
     ping.ack = True
 
 
-def move_system(dt, eid, pos, velocity):
+def move_system(eid, pos, velocity, *, dt, **kwargs):
     pos.x += velocity.dx * dt
     pos.y += velocity.dy * dt
     return (pos.x, pos.y)
@@ -161,17 +161,17 @@ def test_comps_of_eid():
 
 def test_run_system():
     e1, e2 = setup()
-    ecs.run_system(1, wounding_system, 'health')
+    ecs.run_system(wounding_system, 'health')
     assert ecs.eidx[e2]['health'].health == 900
     assert ecs.cidx['health'][e2].health == 900
 
     worked = False
 
-    def sys_no_args(dt, eid):
+    def sys_no_args(eid):
         nonlocal worked
         worked = True
 
-    ecs.run_system(0, sys_no_args)
+    ecs.run_system(sys_no_args)
     assert worked
 
 
@@ -181,11 +181,11 @@ def test_run_bulk_system():
         eid = ecs.create_entity()
         ecs.add_component(eid, 'number', i)
 
-    def bulk_runner(dt, call_list):
+    def bulk_runner(call_list):
         assert len(call_list) == 10
         return sum([i for eid, i in call_list])
 
-    assert ecs.run_bulk_system(0, bulk_runner, 'number') == 45
+    assert ecs.run_bulk_system(bulk_runner, 'number') == 45
 
 
 def test_run_all_systems():
@@ -194,7 +194,7 @@ def test_run_all_systems():
     ecs.add_system(wounding_system, 'health')
     ecs.add_component(e2, 'pos', SimpleNamespace(x=100, y=200))
     ecs.add_component(e2, 'velocity', SimpleNamespace(dx=5, dy=7))
-    res = ecs.run_all_systems(1)
+    res = ecs.run_all_systems(dt=1)
 
     assert ecs.eidx[e2]['pos'] == SimpleNamespace(x=105, y=207)
     assert res[move_system][e2] == (105, 207)
@@ -274,7 +274,7 @@ def test_reset():
 
 
 def test_kill_from_system():
-    def kill_system(dt, eid, kill):
+    def kill_system(eid, kill):
         ecs.remove_entity(eid)
 
     ecs.reset()
@@ -286,7 +286,7 @@ def test_kill_from_system():
             ecs.add_component(e, 'kill', True)
 
     assert len(ecs.eidx) == 10
-    ecs.run_system(1, kill_system, 'kill')
+    ecs.run_system(kill_system, 'kill')
     assert len(ecs.eidx) == 5
 
 
@@ -318,11 +318,11 @@ def test_run_domain():
     e = ecs.create_entity()
     ecs.add_component(e, 'ping', Ping(False))
 
-    res = ecs.run_domain(1, 'infra')
+    res = ecs.run_domain('infra')
     assert ping_system in res
     assert e in res[ping_system]
 
-    res = ecs.run_domain(1, 'non-existent')
+    res = ecs.run_domain('non-existent')
     assert res == {}
 
 
@@ -417,12 +417,12 @@ def test_add_to_archetype():
     # Also tests remove_from_archetype
     setup()
 
-    def test_system(dt, eid, test):
+    def test_system(eid, test):
         pass
 
     e = ecs.create_entity()
     ecs.add_component(e, 'test', True)
-    ecs.run_system(0, test_system, 'test')
+    ecs.run_system(test_system, 'test')
     assert e in ecs.archetype[('test',)]
 
     ecs.remove_component(e, 'test')
@@ -470,10 +470,10 @@ def test_property_get_entities():
 def test_property_run_system():
     setup_property_tests()
 
-    def flag_system(dt, eid, comp1, comp2):
+    def flag_system(eid, comp1, comp2):
         ecs.add_component(eid, 'flag', True)
 
-    ecs.run_system(0, flag_system, 'comp-1', 'comp-2', has_properties={'is-even'})
+    ecs.run_system(flag_system, 'comp-1', 'comp-2', has_properties={'is-even'})
     assert len(ecs.eids_by_cids('flag')) == 5
 
 

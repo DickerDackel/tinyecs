@@ -10,7 +10,7 @@ from pgcooldown import Cooldown
 from pygame import Vector2
 
 
-def marquee_system(dt, eid, marquee, border, surface):
+def marquee_system(eid, marquee, border, surface, *, dt):
     def bounce(point, momentum):
         point += momentum * dt
         if point.x < 0:
@@ -80,7 +80,7 @@ def main():
 
         screen.fill(BLACK)
 
-        ecs.run_system(dt, marquee_system, 'marquee', 'border', 'surface')
+        ecs.run_system(marquee_system, 'marquee', 'border', 'surface', dt=dt)
 
         pygame.display.flip()
         clock.tick(FPS)

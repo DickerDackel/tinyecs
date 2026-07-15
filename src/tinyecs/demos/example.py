@@ -25,7 +25,7 @@ class Velocity:
     dy: float
 
 
-def motion_system(dt, eid, position, velocity):
+def motion_system(eid, position, velocity, *, dt):
     # Note that assigning a new Vector to position would not make it back
     # into e.position.  But since we don't change the position instance
     # itself, we're safe.
@@ -33,14 +33,14 @@ def motion_system(dt, eid, position, velocity):
     position.y += velocity.dy * dt
 
 
-def lifetime_system(dt, eid, lifetime):
+def lifetime_system(eid, lifetime, *, dt):
     lifetime.time_left -= 1 * dt
     if lifetime.time_left <= 0:
         print(f'removing entity {eid}')
         ecs.remove_entity(eid)
 
 
-def render_system(dt, eid, printable):
+def render_system(eid, printable):
     # the printable component contains no data at all and can be ignored,
     # but it will still be passed as a parameter.
     name, pos, velocity, lifetime = ecs.comps_of_eid(eid,
@@ -72,7 +72,7 @@ def main():
 
     ecs.run_system(1, render_system, Comps.PRINTABLE)
     for i in range(15):
-        ecs.run_system(1, motion_system, Comps.POSITION, Comps.VELOCITY)
+        ecs.run_system(1, motion_system, Comps.POSITION, Comps.VELOCITY, dt=1)
         ecs.run_system(1, lifetime_system, Comps.LIFETIME)
         ecs.run_system(1, render_system, Comps.PRINTABLE)
 
@@ -105,8 +105,8 @@ def main():
 
     for i in range(15):
         # ecs.run_all_systems(1)
-        ecs.run_domain(1, 'updates')
-        ecs.run_domain(1, 'render')
+        ecs.run_domain('updates', dt=1)
+        ecs.run_domain('render')
 
     print(f'All entities: {ecs.eidx}')
     print(f'All components: {ecs.cidx}')

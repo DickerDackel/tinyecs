@@ -14,7 +14,7 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
 
-def bounding_box_system(dt, eid, world, position, momentum):
+def bounding_box_system(eid, world, position, momentum, **kwargs):
     if position.x < 0:
         position.x = -position.x
         momentum.x = -momentum.x
@@ -95,7 +95,7 @@ def main():
         screen.fill('black')
 
         group.update(dt)
-        ecs.run_all_systems(dt)
+        ecs.run_all_systems(dt=dt)
 
         screen.blit(click, click_rect)
         group.draw(screen)

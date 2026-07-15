@@ -6,11 +6,11 @@ from types import SimpleNamespace
 from pygame import Vector2
 
 
-def momentum_system(dt, eid, momentum, position):
+def momentum_system(eid, momentum, position, *, dt):
     position += momentum * dt
 
 
-def border_system(dt, eid, border, position, momentum):
+def border_system(eid, border, position, momentum, **kwargs):
     if position.x < 0:
         position.x = -position.x
         momentum.x = -momentum.x
@@ -25,7 +25,7 @@ def border_system(dt, eid, border, position, momentum):
         momentum.y = -momentum.y
 
 
-def background_system(dt, eid, background, position, surface):
+def background_system(eid, background, position, surface, *, dt):
     def draw_one(angle, offset):
         v0 = Vector2(position)
         v1 = Vector2(2000, 0).rotate(angle)
@@ -81,7 +81,7 @@ def main():
 
         screen.fill('black')
 
-        ecs.run_all_systems(dt)
+        ecs.run_all_systems(dt=dt)
 
         pygame.display.flip()
         clock.tick(FPS)

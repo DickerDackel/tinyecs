@@ -10,12 +10,12 @@ from pgcooldown import Cooldown
 from pygame import Vector2
 
 
-def dead_sprite_system(dt, eid, dead, sprite):
+def dead_sprite_system(eid, dead, sprite):
     sprite.kill()
     ecs.remove_entity(eid)
 
 
-def lifetime_sprite_system(dt, eid, lifetime, sprite):
+def lifetime_sprite_system(eid, lifetime, sprite):
     if lifetime.hot():
         return
     sprite.kill()
@@ -54,7 +54,7 @@ def create_shard(position, image, *groups):
     ecs.add_component(e, 'lifetime', Cooldown(random() * 0.25))
 
 
-def homing_missile_system(dt, eid, homing_missile, position, momentum):
+def homing_missile_system(eid, homing_missile, position, momentum, *, dt):
     target_pos = ecs.comp_of_eid(homing_missile.target, 'position')
 
     target = target_pos
@@ -88,14 +88,14 @@ def homing_missile_system(dt, eid, homing_missile, position, momentum):
     momentum.rotate_ip(copysign(rotation, delta_phi))
 
 
-def fire_system(dt, eid, fire, position):
+def fire_system(eid, fire, position):
     for i in range(fire.count):
         fire.fkt(pos=position)
 
     ecs.remove_component(eid, 'fire')
 
 
-def bounding_box_system(dt, eid, world, position, momentum):
+def bounding_box_system(eid, world, position, momentum):
     if position.x < 0:
         position.x = -position.x
         momentum.x = -momentum.x
@@ -206,15 +206,15 @@ def main():
 
         screen.fill('black')
 
-        ecs.run_system(dt, ecsc.mouse_system, 'mouse', 'position')
-        ecs.run_system(dt, lifetime_sprite_system, 'lifetime', 'sprite')
-        ecs.run_system(dt, dead_sprite_system, 'dead', 'sprite')
-        ecs.run_system(dt, ecsc.dead_system, 'dead')
-        ecs.run_system(dt, ecsc.momentum_system, 'momentum', 'position')
-        ecs.run_system(dt, ecsc.sprite_system, 'sprite', 'position')
-        ecs.run_system(dt, bounding_box_system, 'world', 'position', 'momentum')
-        ecs.run_system(dt, homing_missile_system, 'homing_missile', 'position', 'momentum')
-        ecs.run_system(dt, fire_system, 'fire', 'position')
+        ecs.run_system(ecsc.mouse_system, 'mouse', 'position')
+        ecs.run_system(lifetime_sprite_system, 'lifetime', 'sprite')
+        ecs.run_system(dead_sprite_system, 'dead', 'sprite')
+        ecs.run_system(ecsc.dead_system, 'dead')
+        ecs.run_system(ecsc.momentum_system, 'momentum', 'position', dt=dt)
+        ecs.run_system(ecsc.sprite_system, 'sprite', 'position')
+        ecs.run_system(bounding_box_system, 'world', 'position', 'momentum')
+        ecs.run_system(homing_missile_system, 'homing_missile', 'position', 'momentum', dt=dt)
+        ecs.run_system(fire_system, 'fire', 'position')
 
         screen.blit(click, click_rect)
         group.draw(screen)

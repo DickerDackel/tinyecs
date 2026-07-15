@@ -155,7 +155,7 @@ You can add, remove, and check for them like this::
 The tinyecs functions that return multiple entities and components now support
 filtering by these properties.::
 
-    ecs.run_system(dt, 'position', 'sprite', has_properties={'is-drawable'})
+    ecs.run_system('position', 'sprite', has_properties={'is-drawable'})
 
     ecs.has(eid, has_properties={'is-sprite'})
 
@@ -200,15 +200,17 @@ To apply the position to the rect of the sprite, a function ``sprite_system``
 will be used.  To run e.g. the ``momentum_system``, put the following into the
 game loop::
 
-    ecs.run_system(dt, momentum_system, 'momentum', 'position')
+    ecs.run_system(momentum_system, 'momentum', 'position', dt=deltatime)
 
 When the game loop passes this call, ``run_system`` will find all entities that
 have both components ``momentum`` and ``position`` and pass these together with
-deltatime ``dt`` and the entity ID into the ``momentum_system`` function.
+the entity ID into the ``momentum_system`` function.  Remember, that kwargs can
+be used to pass additional arguments from the main scope.
+
 
 Writing the ``momentum_system`` is easy::
 
-    def momentum_system(dt, eid, momentum, position):
+    def momentum_system(eid, momentum, position, *, dt):
         position += momentum * dt
 
 That's it.  Now every time run system is called for the ``momentum_system``, all
@@ -222,9 +224,9 @@ objects with these two components will have their position updated.
     passed in after the components.  The following will be explained in the actual
     script later.::
 
-        ecs.run_system(dt, deadzone_system, 'position', deadzone=WORLD)
+        ecs.run_system(deadzone_system, 'position', deadzone=WORLD)
 
-So the system is basically the ``update(dt)`` function in an OO driven game.
+So the system is basically the ``update()`` function in an OO driven game.
 
 .. note::
     If you prefer to loop over the list of entities yourself, instead of your
@@ -243,7 +245,13 @@ There are some alternatives still.
 1. you can register systems with the required cids at the start of your
    program and call a single function in your game loop::
 
-        ecs.run_all_systems(dt)
+        ecs.add_system(momentum_system, 'momentum', 'position')
+        ...
+        ecs.run_all_systems(dt=deltatime)
+
+   As with ``run_system``, ``kwargs`` will be passed to down to the systems.
+   So if you decide to run the systems this way, you need to make sure, that
+   all systems accept the ``kwargs`` you'll pass to the runner.
 
 2. To give you a more fine grained control over what systems run together, the
    concept of ``domains`` was introduced.  A system domain is simply a group of
@@ -261,7 +269,7 @@ There are some alternatives still.
 
    .. code-block:: python
 
-        def call_update_system(dt, eid, component):
+        def call_update_system(eid, component, *, dt):
             component.update(dt)
 
    .. note::
@@ -396,15 +404,15 @@ completeness:
     # addition.
     WORLD = SCREEN.scale_by(1.25)
 
-    def momentum_system(dt, eid, momentum, position):
+    def momentum_system(eid, momentum, position, *, dt):
         """Add a delta time scaled momentum to the position."""
         position += momentum * dt
 
-    def sprite_position_system(dt, eid, sprite, position):
+    def sprite_position_system(eid, sprite, position):
         """Apply the position to the rect of the sprite for the sprite group"""
         sprite.rect.center = position
 
-    def deadzone_system(dt, eid, position, *, world):
+    def deadzone_system(eid, position, *, world):
         """Kill sprites that move off screen"""
         if world.collidepoint(position):
             return
@@ -429,7 +437,7 @@ completeness:
 
    .. code-block::
 
-      def take_damage_system(dt, eid, health, damage):
+      def take_damage_system(eid, health, damage):
           ecs.add_component(eid, 'health', health - damage)
 
    For semantic reasons, tinyecs also provides ``update_component``, but that's
@@ -470,9 +478,9 @@ Running the systems
                 pos = pygame.mouse.get_pos()
                 create_box_entity(pos, group)
 
-    >   ecs.run_system(dt, momentum_system, 'momentum', 'position')
-    >   ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
-    >   ecs.run_system(dt, sprite_position_system, 'sprite', 'position')
+    >   ecs.run_system(momentum_system, 'momentum', 'position', dt=dt)
+    >   ecs.run_system(deadzone_system, 'position', world=WORLD)
+    >   ecs.run_system(sprite_position_system, 'sprite', 'position')
 
         screen.fill('black')
 
@@ -539,17 +547,17 @@ from the ``shutdown_`` of the sprite class was commented out.
         ecs.add_component(e, 'sprite', DemoSprite(sprite_group))
 
 
-    def momentum_system(dt, eid, momentum, position):
+    def momentum_system(eid, momentum, position, *, dt):
         """Add a delta time scaled momentum to the position."""
         position += momentum * dt
 
 
-    def sprite_position_system(dt, eid, sprite, position):
+    def sprite_position_system(eid, sprite, position):
         """Apply the position to the rect of the sprite for the sprite group"""
         sprite.rect.center = position
 
 
-    def deadzone_system(dt, eid, position, *, world):
+    def deadzone_system(eid, position, *, world):
         """Kill sprites that move off screen"""
         if world.collidepoint(position):
             return
@@ -578,9 +586,9 @@ from the ``shutdown_`` of the sprite class was commented out.
                 pos = pygame.mouse.get_pos()
                 create_box_entity(pos, group)
 
-        ecs.run_system(dt, momentum_system, 'momentum', 'position')
-        ecs.run_system(dt, deadzone_system, 'position', world=WORLD)
-        ecs.run_system(dt, sprite_position_system, 'sprite', 'position')
+        ecs.run_system(momentum_system, 'momentum', 'position', dt=dt)
+        ecs.run_system(deadzone_system, 'position', world=WORLD)
+        ecs.run_system(sprite_position_system, 'sprite', 'position')
 
         screen.fill('black')
 

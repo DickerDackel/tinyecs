@@ -249,12 +249,12 @@ class RSAImage:
         self.update()
 
 
-def dead_system(dt, eid, dead):
+def dead_system(eid, dead, **kwargs):
     """Reap entities marked with a `dead` component."""
     ecs.remove_entity(eid)
 
 
-def deadzone_system(dt, eid, world, position, *, container):
+def deadzone_system(eid, world, position, *, container, **kwargs):
     """Kill entities moving outside defined boundaries
 
     To avoid sprites flying off to infinity, a dead zone can be defined, that
@@ -284,7 +284,7 @@ def deadzone_system(dt, eid, world, position, *, container):
         ecs.remove_entity(eid)
 
 
-def extension_system(dt, eid, extension):
+def extension_system(eid, extension, **kwargs):
     """Add additional components.
 
     Parameters:
@@ -318,29 +318,29 @@ def extension_system(dt, eid, extension):
         ecs.remove_component(eid, 'extension')
 
 
-def force_system(dt, eid, force, momentum):
+def force_system(eid, force, momentum, *, dt, **kwargs):
     """Apply a force to a momentum"""
     momentum += force * dt
 
 
-def lifetime_system(dt, eid, lifetime):
+def lifetime_system(eid, lifetime, **kwargs):
     """Kill an entity after a specified time"""
     if lifetime.cold():
         ecs.remove_entity(eid)
 
 
-def momentum_system(dt, eid, momentum, position):
+def momentum_system(eid, momentum, position, *, dt):
     """Apply momentum to a position (a.k.a. "move")."""
     position += momentum * dt
 
 
-def mouse_system(dt, eid, mouse, position):
+def mouse_system(eid, mouse, position):
     """Place the position of an entity to the mouse cursor."""
     mp = pygame.mouse.get_pos()
     position.xy = Vector2(mp)
 
 
-def scale_system(dt, eid, scale, momentum):
+def scale_system(eid, scale, momentum, *, dt):
     """Apply friction to a momentum.
 
     In contrast to a force, which adds a directional vector to the momentum,
@@ -353,7 +353,7 @@ def scale_system(dt, eid, scale, momentum):
 friction_system = scale_system
 
 
-def sprite_system(dt, eid, sprite, position):
+def sprite_system(eid, sprite, position, **kwargs):
     """Set the rect.center of sprite to position."""
 
     if sprite.rect:
@@ -362,7 +362,7 @@ def sprite_system(dt, eid, sprite, position):
         sprite.rect = sprite.image.get_rect(center=position)
 
 
-def wsad_system(dt, eid, wsad, position):
+def wsad_system(eid, wsad, position, *, dt):
     """An example system to control a playear with the `wsad` keys.
 
     Given the following entity:
@@ -374,7 +374,7 @@ def wsad_system(dt, eid, wsad, position):
 
     running this system will modify the position component of the entity.
 
-        ecs.run_system(dt, 'wsad', 'position', 'player')
+        ecs.run_system('wsad', 'position', 'player', dt=dt)
 
     Parameters
     ----------
@@ -396,4 +396,4 @@ def wsad_system(dt, eid, wsad, position):
     if keys[pygame.K_d]: v.x += 1
 
     # Normalize so diagonals are not faster then axis motion
-    if v: position += v.normalize() * wsad * dt
+    if v: position += v.normalize() * wsad
