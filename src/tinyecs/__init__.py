@@ -480,7 +480,7 @@ def comp_of_eid(eid: EntityID, cid: ComponentID) -> Component:
     return comps_of_eid(eid, cid)[0]
 
 
-def eid_of_comp(comp: Component) -> set(EntityID):
+def eid_of_comp(comp: Component) -> set[EntityID]:
     """Find the entity id for object comp.
 
     :param comp: The component to find the entity of
