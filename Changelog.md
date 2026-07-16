@@ -1,3 +1,38 @@
+# v0.4.0 - BREAKING CHANGE
+
+- Bugfix: Typo in typehinting removed
+- Bugfix: The bulk runner was called even when no system entities matched.
+- Enhancement: EntityComponentBundle type is now public
+- API change: Got rid of mandatory ``dt``
+
+This release gets rid of the design flaw of mandatory deltatime.
+
+Having made deltatime a requirement for all systems and the runner calls was a
+mistake from the beginning, since a lot of systems just don't need it.
+
+To adapt to the new call signature you have to
+
+- Remove the first parameter for `dt` of all system functions and the various
+  ecs.run_* functions.
+- systems that actually do make use of deltatime, can receive it as a kwarg inkstead:
+
+    # From
+    def momentum_system(dt, eid, position, momentum):...
+
+    # To
+    def momentum_system(eid, position, momentum, *, dt):...
+
+    # From
+    ecs.run_system(dt, 'position', 'momentum')
+
+    # To
+    ecs.run_system('position', 'momentum', dt=deltatime)
+
+The drawback is, that if you use `run_all_systems` and `run_domain`, all
+systems that don't need deltatime need an additional `**kwargs` at the end of
+their argument list, since those run-functions pass given kwargs to all
+registered systems.
+
 # v0.3.6
 - New API: run_bulk_system
 - Cosmetics: replace germanism `fkt` with `fn`
