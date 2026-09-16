@@ -78,7 +78,7 @@ class RegistryError(Exception):
     """
 
     def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
-        self.error = error
+        super().__init__(error)
         self.eid = eid
         self.cid = cid
         self.component = component
