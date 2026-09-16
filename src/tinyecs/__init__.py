@@ -296,7 +296,7 @@ def add_system(fn: SystemFunction, *cids: ComponentID) -> None:
 
     The prototype for the function is::
 
-        fn(delta_time, eid, *comps)
+        fn(eid, *comps, *args, **kwargs)
 
     where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
     of the entity that matches, and \*comps are all requested components for
