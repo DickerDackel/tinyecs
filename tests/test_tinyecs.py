@@ -1,6 +1,4 @@
 import pytest
-except KeyError:
-    pass
 import re
 
 import tinyecs as ecs
