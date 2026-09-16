@@ -72,7 +72,7 @@ class RegistryError(Exception):
     :param eid: The entity ID of the defective registry entry
     :param cid: The component ID of the defective registry entry
     :param component: The component object of the defective registry entry
-    :param eid: The properties of the defective registry entry
+    :param other: Component in cidx when eidx and cidx mismatch
 
     Contains an error message and the registry objects that have been
     identified as inconsistent.
