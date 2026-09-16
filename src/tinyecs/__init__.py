@@ -33,7 +33,7 @@ type _RunSystemResult = dict[EntityID, Any]
 # The typehinting system can't work with functions using *args, **kwargs.
 # This solution comes from https://docs.python.org/3/library/typing.html#annotating-callable-objects
 class SystemFunction(Protocol):
-    def __call__(self, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, object]) -> Any: ...
+    def __call__(self, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, Any]) -> Any: ...
 
 
 eidx = {}  # entity index
