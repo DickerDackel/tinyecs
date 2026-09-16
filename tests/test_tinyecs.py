@@ -1,4 +1,6 @@
 import pytest
+except KeyError:
+    pass
 import re
 
 import tinyecs as ecs
@@ -540,6 +542,7 @@ if __name__ == '__main__':
     test_cids_of_eid()
     test_comps_of_eid()
     test_run_system()
+    test_run_bulk_system()
     test_run_all_systems()
     test_remove_system()
     test_remove_entity()
@@ -550,7 +553,6 @@ if __name__ == '__main__':
     test_add_system_to_domain()
     test_remove_system_from_domain()
     test_run_domain()
-    test_is_eid()
     test_eid_has()
     test_shutdown()
     test_cid_of_comp()
@@ -565,3 +567,5 @@ if __name__ == '__main__':
     test_property_archetype()
     test_property_find_entities()
     test_property_clear()
+    test_property_purge()
+    test_property_eid_unknown()
