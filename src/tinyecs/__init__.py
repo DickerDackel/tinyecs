@@ -391,6 +391,7 @@ def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
 
     :param cids: All component ids that need to match
     :return: True if all given cids are available for the specified eid
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
     try:
