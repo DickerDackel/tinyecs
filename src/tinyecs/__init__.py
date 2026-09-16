@@ -149,7 +149,7 @@ def create_entity(tag: EntityID = None,
     :return: The entity ID.  Same as given if one is passed, otherwise a uuid4
     """
 
-    eid = tag if tag else str(uuid4())
+    eid = tag if tag is not None else str(uuid4())
     if eid not in eidx:
         eidx[eid] = {}
 
