@@ -5,7 +5,7 @@ from uuid import uuid4
 
 __all__ = ['Component', 'ComponentID', 'DomainID', 'EntityID',
            'EntityComponentsBundle', 'Property', 'RegistryError',
-           'UnknownArchetypeError', 'UnknownComponentError',
+           'SystemFunction', 'UnknownArchetypeError', 'UnknownComponentError',
            'UnknownEntityError', 'UnknownSystemError', 'add_component',
            'add_components', 'add_system', 'add_system_to_domain',
            'add_to_archetype', 'cid_of_comp', 'cids_of_eid',
