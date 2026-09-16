@@ -344,10 +344,10 @@ def add_system_to_domain(domain: DomainID, system: SystemFunction) -> None:
     .. important:: The system must first be registered with add_system.
     """
 
-    if domain not in didx:
-        didx[domain] = set()
     if system not in sidx:
         raise UnknownSystemError(f'system {system} is not registered')
+    if domain not in didx:
+        didx[domain] = set()
     didx[domain].add(system)
 
 
