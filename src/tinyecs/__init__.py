@@ -393,7 +393,11 @@ def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
     :return: True if all given cids are available for the specified eid
     """
 
-    e = eidx[eid]
+    try:
+        e = eidx[eid]
+    except KeyError:
+        raise UnknownEntityError
+
     for cid in cids:
         if cid not in e:
             return False
@@ -665,7 +669,10 @@ def remove_archetype(cids: Iterable[ComponentID]) -> None:
     """
 
     at = tuple(cids)
-    del archetype[at]
+    try:
+        del archetype[at]
+    except KeyError:
+        pass
 
 
 def add_to_archetype(eid: EntityID) -> None:
@@ -784,7 +791,10 @@ def remove_property(eid: EntityID, prop: Property) -> None:
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
-    plist[eid].remove(prop)
+    try:
+        plist[eid].remove(prop)
+    except KeyError:
+        pass
 
 
 def clear_properties(eid: EntityID) -> None:
