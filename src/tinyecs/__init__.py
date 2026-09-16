@@ -496,7 +496,7 @@ def eid_of_comp(comp: Component) -> set[EntityID]:
     :return: The entity_id the given component belongs to
     """
 
-    return oidx[id(comp)]
+    return oidx.get(id(comp), set())
 
 
 def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
