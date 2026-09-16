@@ -219,12 +219,16 @@ def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> Component
     # Make sure, when replacing a component, the the old one is removed from
     # oidx for this entity.
     try:
-        old_comp = id(eidx[eid][cid])
-        oidx[old_comp].discard(eid)
-        if not oidx[old_comp]:
-            del oidx[old_comp]
+        old_comp = eidx[eid][cid]
     except KeyError:
         pass
+    else:
+        old_comp_id = id(old_comp)
+        oidx[old_comp_id].discard(eid)
+        if not oidx[old_comp_id]:
+            del oidx[old_comp_id]
+        if hasattr(old_comp, 'shutdown_'):
+            old_comp.shutdown_()
 
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp

@@ -338,17 +338,21 @@ def test_eid_has():
 def test_shutdown():
     ecs.reset()
 
-    shutdown_successful = False
+    class HasShutdown(Exception): ...
 
     class ShutdownEntity():
         def shutdown_(self):
-            nonlocal shutdown_successful
-            shutdown_successful = True
+            raise HasShutdown()
 
-    e = ecs.create_entity()
-    ecs.add_component(e, 'shutdown-test', ShutdownEntity())
-    ecs.remove_entity(e)
-    assert shutdown_successful
+    eid = ecs.create_entity()
+    ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
+    with pytest.raises(HasShutdown) as e:
+        ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
+    assert e.type == HasShutdown
+
+    with pytest.raises(HasShutdown) as e:
+        ecs.remove_entity(eid)
+    assert e.type == HasShutdown
 
 
 def test_cid_of_comp():
