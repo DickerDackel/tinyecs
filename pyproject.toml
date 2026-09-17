@@ -24,15 +24,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-base = ["tinyecs.compsys.base @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-base"]
-dynamics = ["tinyecs.compsys.dynamics @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-dynamics"]
-patternengine = ["tinyecs.compsys.patternengine @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-patternengine"]
-sdl2 = ["tinyecs.compsys.sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2"]
+base = ["tinyecs-compsys-base @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-base"]
+dynamics = ["tinyecs-compsys-dynamics @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-dynamics"]
+patternengine = ["tinyecs-compsys-patternengine @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-patternengine"]
+sdl2 = ["tinyecs-compsys-sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2"]
 demo = [
-    "tinyecs.compsys[base,dynamics,sdl2]",
-    "tinyecs.compsys.sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2",
+    "tinyecs[base,dynamics,sdl2] @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys",
+    "tinyecs.demo @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-demo",
 ]
-all = ["tinyecs.compsys[base,dynamics,sdl2,patternengine,demo]"]
+all = ["tinyecs[base,dynamics,sdl2,patternengine]"]
 
 [project.urls]
 homepage = "https://github.com/dickerdackel/tinyecs"
