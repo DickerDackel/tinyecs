@@ -30,7 +30,7 @@ patternengine = ["tinyecs.compsys.patternengine @ git+https://forgejo.indieandmo
 sdl2 = ["tinyecs.compsys.sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2"]
 demo = [
     "tinyecs.compsys[base,dynamics,sdl2]",
-    "tinyecs.compsys.sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2"],
+    "tinyecs.compsys.sdl2 @ git+https://forgejo.indieandmore.photography/dickerdackel/tinyecs-compsys-sdl2",
 ]
 all = ["tinyecs.compsys[base,dynamics,sdl2,patternengine,demo]"]
 
