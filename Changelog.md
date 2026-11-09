@@ -1,3 +1,10 @@
+# v0.5.0 - BREAKING CHANGE
+
+- Split of components and demos into tinyecs-compsys-*
+
+The initially provided demo components and systems have been migrated to the
+new tinyecs-compsys-* packages and a plugin architecture.
+
 # v0.4.0 - BREAKING CHANGE
 
 - Bugfix: Typo in typehinting removed
