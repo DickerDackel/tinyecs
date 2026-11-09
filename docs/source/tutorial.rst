@@ -155,7 +155,7 @@ You can add, remove, and check for them like this::
 The tinyecs functions that return multiple entities and components now support
 filtering by these properties.::
 
-    ecs.run_system('position', 'sprite', has_properties={'is-drawable'})
+    ecs.run_system(sys_do_something, 'position', 'sprite', has_properties={'is-drawable'})
 
     ecs.has(eid, has_properties={'is-sprite'})
 
@@ -166,14 +166,14 @@ filtering by these properties.::
 This way, e.g. sprites can now be layered by filtering for the different
 types::
 
-    ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-enemy'})
-    ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-bullet'})
-    ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-fx'})
-    ecs.run_system(0, render_sprites, 'position', 'sprite', has_properties={'is-hud'})
+    ecs.run_system(render_sprites, 'position', 'sprite', has_properties={'is-enemy'})
+    ecs.run_system(render_sprites, 'position', 'sprite', has_properties={'is-bullet'})
+    ecs.run_system(render_sprites, 'position', 'sprite', has_properties={'is-fx'})
+    ecs.run_system(render_sprites, 'position', 'sprite', has_properties={'is-hud'})
 
 Finally, properties can be searched directly, e.g. to prune dead entities::
 
-    for eid in ecs.eid_by_property('is-dead'):
+    for eid in ecs.eids_by_property('is-dead'):
         ecs.remove_entity(eid)
 
 Systems
@@ -224,7 +224,7 @@ objects with these two components will have their position updated.
     passed in after the components.  The following will be explained in the actual
     script later.::
 
-        ecs.run_system(deadzone_system, 'position', deadzone=WORLD)
+        ecs.run_system(deadzone_system, 'position', world=WORLD)
 
 So the system is basically the ``update()`` function in an OO driven game.
 
@@ -290,9 +290,12 @@ released again.
 
 Boxes that drift off screen will be automatically removed from the system.
 
-tinyecs comes with a sprite that has a shutdown method, and also systems that
-handle motion and screen boundaries, but we'll write these here ourselves, so
-you get a feel for how things work.
+Earlier versions of tinyecs came with a sprite class and some other
+components.  These all have been moved into different, dedicated component
+libraries.  To install all of those, use `pip install tinyecs[all]`.
+
+In the scope of this tutorial, we write all components and systems ourself
+just to show that there is nothing special hidden in these pre-made libs.
 
 A basic pygame game loop
 ------------------------
@@ -608,10 +611,17 @@ Available components and systems
 
 .. note::
 
-    In the beginning, I created a set of pre-made components and systems, but
-    I kept redesigning them again and again and am not using those anymore,
-    since they are far to specific and tying the use of tinyecs to pygame-ce.
+   In the beginning, I created a set of pre-made components and systems, but
+   I kept redesigning them again and again and am not using those anymore,
+   since they are far to specific and tying the use of tinyecs to pygame-ce.
 
-    There might be dedicated packages in the future, or not.  I'll leave those
-    old components as examples in, but they're unsupported and not intended to
-    be used.
+   Those components have now been replaced by the following packages:
+
+   * ``tinyecs.compsys``
+   * ``tinyecs.compsys.base``
+   * ``tinyecs.compsys.dynamics``
+   * ``tinyecs.compsys.sdl2``
+   * ``tinyecs.compsys.patternengine``
+
+   These packages are WIP and are subject to change.  Look at their
+   documentation for contents and usage.

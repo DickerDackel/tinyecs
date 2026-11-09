@@ -3,20 +3,21 @@ from collections.abc import Hashable, Iterable
 from typing import Any, Protocol
 from uuid import uuid4
 
-__all__ = ['Component', 'ComponentID', 'DomainID', 'EntityID', 'Property',
-           'RegistryError', 'UnknownArchetypeError', 'UnknownComponentError',
-           'UnknownEntityError', 'UnknownSystemError', 'add_component',
-           'add_components', 'add_system', 'add_system_to_domain',
-           'add_to_archetype', 'cid_of_comp', 'cids_of_eid',
-           'clear_properties', 'comp_of_eid', 'comps_of_archetype',
-           'comps_of_eid', 'create_archetype', 'create_entity', 'eid_has',
-           'eid_of_comp', 'eids_by_cids', 'eids_by_property', 'has',
-           'has_property', 'healthcheck', 'purge_by_property',
-           'remove_archetype', 'remove_component', 'remove_entity',
-           'remove_from_archetype', 'remove_property', 'remove_system',
-           'remove_system_from_domain', 'reset', 'run_all_systems',
-           'run_domain', 'run_system', 'set_properties', 'set_property',
-           'update_component',]
+__all__ = ['Component', 'ComponentID', 'DomainID', 'EntityID',
+           'EntityComponentsBundle', 'Property', 'RegistryError',
+           'SystemFunction', 'BulkSystemFunction', 'UnknownArchetypeError',
+           'UnknownComponentError', 'UnknownEntityError',
+           'UnknownSystemError', 'add_component', 'add_components',
+           'add_system', 'add_system_to_domain', 'add_to_archetype',
+           'cid_of_comp', 'cids_of_eid', 'clear_properties', 'comp_of_eid',
+           'comps_of_archetype', 'comps_of_eid', 'create_archetype',
+           'create_entity', 'eid_has', 'eid_of_comp', 'eids_by_cids',
+           'eids_by_property', 'has', 'has_property', 'healthcheck',
+           'purge_by_property', 'remove_archetype', 'remove_component',
+           'remove_entity', 'remove_from_archetype', 'remove_property',
+           'remove_system', 'remove_system_from_domain', 'reset',
+           'run_all_systems', 'run_bulk_system', 'run_domain', 'run_system',
+           'set_properties', 'set_property', 'update_component',]
 
 type EntityID = Hashable
 type ComponentID = Hashable
@@ -32,7 +33,11 @@ type _RunSystemResult = dict[EntityID, Any]
 # The typehinting system can't work with functions using *args, **kwargs.
 # This solution comes from https://docs.python.org/3/library/typing.html#annotating-callable-objects
 class SystemFunction(Protocol):
-    def __call__(self, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, object]) -> Any: ...
+    def __call__(self, eid: EntityID, *cids: ComponentID, **kwargs: dict[str, Any]) -> Any: ...
+
+
+class BulkSystemFunction(Protocol):
+    def __call__(self, call_list: list[tuple[EntityID, *tuple[Component, ...]]], **kwargs: dict[str, Any]) -> Any: ...
 
 
 eidx = {}  # entity index
@@ -71,14 +76,14 @@ class RegistryError(Exception):
     :param eid: The entity ID of the defective registry entry
     :param cid: The component ID of the defective registry entry
     :param component: The component object of the defective registry entry
-    :param eid: The properties of the defective registry entry
+    :param other: Component in cidx when eidx and cidx mismatch
 
     Contains an error message and the registry objects that have been
     identified as inconsistent.
     """
 
     def __init__(self, error, *, eid, cid=None, component=None, other=None, properties=None):
-        self.error = error
+        super().__init__(error)
         self.eid = eid
         self.cid = cid
         self.component = component
@@ -149,7 +154,7 @@ def create_entity(tag: EntityID = None,
     :return: The entity ID.  Same as given if one is passed, otherwise a uuid4
     """
 
-    eid = tag if tag else str(uuid4())
+    eid = tag if tag is not None else str(uuid4())
     if eid not in eidx:
         eidx[eid] = {}
 
@@ -208,6 +213,11 @@ def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> Component
     .. note:: Technically, there is no reason a comp object couldn't
         have methods, but by concept, functionality is reserved for the System
         working on the components, not the component itself.
+
+    .. note:: This function is also aliased to `update_component` just to be
+        able to make it clear in the user code, that a component will be
+        replaced.  Consider it semantic sugar.
+
     """
 
     if eid not in eidx:
@@ -219,12 +229,16 @@ def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> Component
     # Make sure, when replacing a component, the the old one is removed from
     # oidx for this entity.
     try:
-        old_comp = id(eidx[eid][cid])
-        oidx[old_comp].discard(eid)
-        if not oidx[old_comp]:
-            del oidx[old_comp]
+        old_comp = eidx[eid][cid]
     except KeyError:
         pass
+    else:
+        old_comp_id = id(old_comp)
+        oidx[old_comp_id].discard(eid)
+        if not oidx[old_comp_id]:
+            del oidx[old_comp_id]
+        if hasattr(old_comp, 'shutdown_'):
+            old_comp.shutdown_()
 
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
@@ -242,7 +256,7 @@ def add_components(eid: EntityID, components: dict[ComponentID, Component]) -> l
     """A convenience wrapper around add_component.
 
     :param components: A dict with component IDs as keys and components as values (see add_component)
-    :return: None
+    :return: list of added component IDs
     """
 
     return [add_component(eid, cid, comp) for cid, comp in components.items()]
@@ -255,8 +269,8 @@ def remove_component(eid: EntityID, *cids: ComponentID) -> None:
     :param cids: The component ids to remove
     :return: None
 
-    If the component has a shutdown\_ attribute, it is assumed to be a list of
-    zero parameter functions to be called in order.
+    If the component has a shutdown\_ attribute, it is assumed to be a
+    zero parameter function that is called after the component removal.
 
     .. note:: If the entity no longer exists, the error is silently ignored.
 
@@ -291,11 +305,10 @@ def add_system(fn: SystemFunction, *cids: ComponentID) -> None:
 
     The prototype for the function is::
 
-        fn(delta_time, eid, *comps)
+        fn(eid, *comps, **kwargs)
 
-    where delta_time is e.g. the miliseconds from a pygame tick.  eid is the id
-    of the entity that matches, and \*comps are all requested components for
-    this specific entity.
+    eid is the id of the entity that matches, and \*comps are all requested
+    components for this specific entity.
 
     This function is called for every entity that matches all specified
     component ids.
@@ -340,10 +353,10 @@ def add_system_to_domain(domain: DomainID, system: SystemFunction) -> None:
     .. important:: The system must first be registered with add_system.
     """
 
-    if domain not in didx:
-        didx[domain] = set()
     if system not in sidx:
         raise UnknownSystemError(f'system {system} is not registered')
+    if domain not in didx:
+        didx[domain] = set()
     didx[domain].add(system)
 
 
@@ -387,9 +400,14 @@ def eid_has(eid: EntityID, *cids: ComponentID) -> bool:
 
     :param cids: All component ids that need to match
     :return: True if all given cids are available for the specified eid
+    :raises UnknownEntityError: If the entity is not registered (anymore).
     """
 
-    e = eidx[eid]
+    try:
+        e = eidx[eid]
+    except KeyError:
+        raise UnknownEntityError
+
     for cid in cids:
         if cid not in e:
             return False
@@ -401,7 +419,7 @@ def eids_by_cids(*cids: ComponentID, has_properties: _OptionalProperties = None)
     """Get eids that match all specified cids.
 
     :param cids: All component ids that need to match
-    :param as_properties: Optional set/tuple/list of required properties
+    :param has_properties: Optional set/tuple/list of required properties
     :return: A list of tuples of entity IDs and components
     """
 
@@ -454,7 +472,7 @@ def comps_of_eid(eid: EntityID, *cids: ComponentID) -> list[Component]:
     While cids_of_eid gets component IDs, this function now gets the actual
     components containing the data.
 
-    .. note:: If cids is empty or None, returns all components of eid.
+    .. note:: If no cids are given, returns all components of eid.
     """
 
     if eid not in eidx:
@@ -484,10 +502,10 @@ def eid_of_comp(comp: Component) -> set[EntityID]:
     """Find the entity id for object comp.
 
     :param comp: The component to find the entity of
-    :return: The entity_id the given component belongs to
+    :return: A set of all entity IDs that contain the given component.
     """
 
-    return oidx[id(comp)]
+    return oidx.get(id(comp), set())
 
 
 def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
@@ -564,7 +582,7 @@ def run_system(fn: SystemFunction,
     return {eid: fn(eid, *parms, **kwargs) for eid, *parms in call_list}
 
 
-def run_bulk_system(fn: SystemFunction,
+def run_bulk_system(fn: BulkSystemFunction,
                     *cids: ComponentID,
                     has_properties: _OptionalProperties = None,
                     **kwargs: dict[str, Any]) -> Any:
@@ -573,18 +591,28 @@ def run_bulk_system(fn: SystemFunction,
     :param fn: the actual system function
     :param cids: the components to run on
     :param has_properties: set of required properties
-    :return: A dictionary with entity IDs as key and the function result as value
+    :return: Returns whatever the given callback returns or None if no
+        matching entities have been found
 
-    The fn is called with a list of entity ID and components tuples of all
+    The fn is called with a list of `(eid, comp...)` tuples of all
     entities that contain the listed components.  The list can further be
     narrowed down my filtering for given properties.
 
-    ``fn`` is called given a list of ``(EntityID, (components,...))``. In
+    ``fn`` is called given a list of ``(EntityID, components,...)``. In
     contrast to ``run_system``, the user is responsible to loop over the list.
+
+    If no entities are found, `fn` is not called.
 
     The prototype of ``fn`` is::
 
-        def callback(call_list: list[tuple[EntityID, list[Component]]]) -> Any
+        def callback(call_list: list[tuple[EntityID, *tuple[Component, ...]]], **kwargs) -> Any
+
+    Example::
+
+        def sys_bulk_render(entities_and_comps):
+            for eid, pos, sprite in entities_and_comps:
+                ...
+
     """
 
     call_list = _create_call_list(cids, has_properties)
@@ -654,20 +682,23 @@ def create_archetype(*cids: ComponentID) -> None:
 
 
 def remove_archetype(cids: Iterable[ComponentID]) -> None:
-    """Remove an archetype from the system. (See `add_archetype`).
+    """Remove an archetype from the system. (See `create_archetype`).
 
     :param cids: The list of component IDs that construct the archetype.
     :return: None
     """
 
     at = tuple(cids)
-    del archetype[at]
+    try:
+        del archetype[at]
+    except KeyError:
+        pass
 
 
 def add_to_archetype(eid: EntityID) -> None:
     """Make sure, eid is registered with all appropriate archetypes.
 
-    :param eids: The entity ID to add to the archetype
+    :param eid: The entity ID to add to the archetype
 
     There should be no need to call this function manually.  It's called
     internally, when a new component is added to an entity which makes this
@@ -687,7 +718,7 @@ def add_to_archetype(eid: EntityID) -> None:
 def remove_from_archetype(eid: EntityID, cid: ComponentID | None = None) -> None:
     """Make sure, eid is only registered with appropriate archetypes.
 
-    :param eids: The entity ID to remove from the archetype
+    :param eid: The entity ID to remove from the archetype
     :param cid: An optional component ID.
 
     There should be no need to call this function manually.  It's called
@@ -726,11 +757,11 @@ def comps_of_archetype(*cids: ComponentID, has_properties: _OptionalProperties =
         return [(e, comps) for e, comps in archetype[at].items()]
 
 
-def set_property(eid: EntityID, property: Property) -> None:
+def set_property(eid: EntityID, prop: Property) -> None:
     """Add a property to the given entity.
 
     :param eid: The entity id to add the component to
-    :param property: A flag or tag that can be filtered, e.g. 'is_drawable'
+    :param prop: A flag or tag that can be filtered, e.g. 'is_drawable'
     :return: None
     :raises UnknownEntityError: If the entity is not registered (anymore).
     """
@@ -738,14 +769,14 @@ def set_property(eid: EntityID, property: Property) -> None:
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
-    plist[eid].add(property)
+    plist[eid].add(prop)
 
 
 def set_properties(eid: EntityID, properties: Iterable[Property]) -> None:
     """Add a list of properties to the given entity.
 
     :param eid: The entity ID to add the properties to.
-    :param property: The list of properties to add.
+    :param properties: The list of properties to add.
 
     This is just a convenience wrapper around `set_property`.
     """
@@ -757,7 +788,7 @@ def has_property(eid: EntityID, prop: Property) -> bool:
     """Checks if the given entity has that property.
 
     :param eid: The entity id to add the component to
-    :param property: The property to check for
+    :param prop: The property to check for
     :return: True if the property is set for the given entity
     :raises UnknownEntityError: If the entity is not registered (anymore).
     """
@@ -772,7 +803,7 @@ def remove_property(eid: EntityID, prop: Property) -> None:
     """Removes a property from the given entity.
 
     :param eid: The entity id to add the component to
-    :param property: The property to remove
+    :param prop: The property to remove
     :return: None
     :raises UnknownEntityError: If the entity is not registered (anymore).
     """
@@ -780,7 +811,10 @@ def remove_property(eid: EntityID, prop: Property) -> None:
     if eid not in eidx:
         raise UnknownEntityError(f'Entity {eid} is not registered')
 
-    plist[eid].remove(prop)
+    try:
+        plist[eid].remove(prop)
+    except KeyError:
+        pass
 
 
 def clear_properties(eid: EntityID) -> None:

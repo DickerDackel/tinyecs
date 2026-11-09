@@ -338,17 +338,21 @@ def test_eid_has():
 def test_shutdown():
     ecs.reset()
 
-    shutdown_successful = False
+    class HasShutdown(Exception): ...
 
     class ShutdownEntity():
         def shutdown_(self):
-            nonlocal shutdown_successful
-            shutdown_successful = True
+            raise HasShutdown()
 
-    e = ecs.create_entity()
-    ecs.add_component(e, 'shutdown-test', ShutdownEntity())
-    ecs.remove_entity(e)
-    assert shutdown_successful
+    eid = ecs.create_entity()
+    ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
+    with pytest.raises(HasShutdown) as e:
+        ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
+    assert e.type == HasShutdown
+
+    with pytest.raises(HasShutdown) as e:
+        ecs.remove_entity(eid)
+    assert e.type == HasShutdown
 
 
 def test_cid_of_comp():
@@ -536,6 +540,7 @@ if __name__ == '__main__':
     test_cids_of_eid()
     test_comps_of_eid()
     test_run_system()
+    test_run_bulk_system()
     test_run_all_systems()
     test_remove_system()
     test_remove_entity()
@@ -546,7 +551,6 @@ if __name__ == '__main__':
     test_add_system_to_domain()
     test_remove_system_from_domain()
     test_run_domain()
-    test_is_eid()
     test_eid_has()
     test_shutdown()
     test_cid_of_comp()
@@ -561,3 +565,5 @@ if __name__ == '__main__':
     test_property_archetype()
     test_property_find_entities()
     test_property_clear()
+    test_property_purge()
+    test_property_eid_unknown()

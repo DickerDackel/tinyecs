@@ -92,3 +92,7 @@ following aliases:
     type DomainID = Hashable
     type Property = Hashable
     type Component = object
+    type EntityComponentsBundle = tuple[EntityID, list[Component]]
+
+Additionally, the protocols ``SystemFunction`` and ``BulkSystemFunction`` are
+provided for ``run_system`` and ``run_bulk_system`` respectively.
