@@ -1,3 +1,7 @@
+# v0.5.1
+
+- No code changes, only a dependency fix for "tinyecs[all]"
+
 # v0.5.0 - BREAKING CHANGE
 
 - Split of components and demos into tinyecs-compsys-*

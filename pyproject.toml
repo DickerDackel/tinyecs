@@ -1,7 +1,7 @@
 [project]
 name = "tinyecs"
 description = "The teeniest, tiniest ECS system"
-version = "0.5.0"
+version = "0.5.1"
 readme = "README.rst"
 
 authors = [
@@ -25,11 +25,7 @@ base = ["tinyecs-compsys-base"]
 dynamics = ["tinyecs-compsys-dynamics"]
 patternengine = ["tinyecs-compsys-patternengine"]
 sdl2 = ["tinyecs-compsys-sdl2"]
-demos = [
-    "tinyecs[base,dynamics,sdl2]",
-    "tinyecs-demo",
-]
-all = ["tinyecs[base,dynamics,sdl2,patternengine,demos]"]
+all = ["tinyecs[base,dynamics,sdl2,patternengine]"]
 
 [project.urls]
 homepage = "https://github.com/dickerdackel/tinyecs"
