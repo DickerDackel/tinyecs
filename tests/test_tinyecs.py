@@ -249,16 +249,16 @@ def test_eid_of_comp():
     oid = id(shared)
 
     ecs.add_component(e1, 'shared', shared)
-    assert ecs.eid_of_comp(shared) == {e1}
-    assert ecs.oidx[oid] == {e1}
+    assert ecs.eid_of_comp(shared) == [e1]
+    assert ecs.oidx[oid] == [(e1, 'shared')]
 
     ecs.add_component(e2, 'shared', shared)
-    assert ecs.eid_of_comp(shared) == {e1, e2}
-    assert ecs.oidx[oid] == {e1, e2}
+    assert ecs.eid_of_comp(shared) == [e1, e2]
+    assert ecs.oidx[oid] == [(e1, 'shared'), (e2, 'shared')]
 
     ecs.remove_component(e1, 'shared')
-    assert ecs.eid_of_comp(shared) == {e2}
-    assert ecs.oidx[oid] == {e2}
+    assert ecs.eid_of_comp(shared) == [e2]
+    assert ecs.oidx[oid] == [(e2, 'shared')]
 
     ecs.remove_component(e2, 'shared')
     assert oid not in ecs.oidx
@@ -338,21 +338,22 @@ def test_eid_has():
 def test_shutdown():
     ecs.reset()
 
-    class HasShutdown(Exception): ...
+    class ShutdownComp():
+        shutdown_called = False
 
-    class ShutdownEntity():
         def shutdown_(self):
-            raise HasShutdown()
+            self.shutdown_called = True
 
     eid = ecs.create_entity()
-    ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
-    with pytest.raises(HasShutdown) as e:
-        ecs.add_component(eid, 'shutdown-test', ShutdownEntity())
-    assert e.type == HasShutdown
+    comp_with_shutdown = ShutdownComp()
+    ecs.add_component(eid, 'shutdown-test', comp_with_shutdown)
 
-    with pytest.raises(HasShutdown) as e:
-        ecs.remove_entity(eid)
-    assert e.type == HasShutdown
+    new_comp_with_shutdown = ShutdownComp()
+    ecs.add_component(eid, 'shutdown-test', new_comp_with_shutdown)
+    assert comp_with_shutdown.shutdown_called
+
+    ecs.remove_entity(eid)
+    assert new_comp_with_shutdown.shutdown_called
 
 
 def test_cid_of_comp():

@@ -44,7 +44,7 @@ eidx = {}  # entity index
 cidx = {}  # component id index
 sidx = {}  # system index
 didx = {}  # domain index
-oidx = defaultdict(set)  # object index
+oidx = defaultdict(list)  # object index
 plist = defaultdict(set)  # entity property lists
 archetype = {}
 
@@ -226,6 +226,8 @@ def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> Component
     if cid not in cidx:
         cidx[cid] = {}
 
+    t = (eid, cid)
+
     # Make sure, when replacing a component, the the old one is removed from
     # oidx for this entity.
     try:
@@ -234,15 +236,19 @@ def add_component(eid: EntityID, cid: ComponentID, comp: Component) -> Component
         pass
     else:
         old_comp_id = id(old_comp)
-        oidx[old_comp_id].discard(eid)
-        if not oidx[old_comp_id]:
-            del oidx[old_comp_id]
-        if hasattr(old_comp, 'shutdown_'):
-            old_comp.shutdown_()
+        try:
+            oidx[old_comp_id].remove(t)
+        except ValueError:
+            pass
+        else:
+            if not oidx[old_comp_id]:
+                del oidx[old_comp_id]
+            if hasattr(old_comp, 'shutdown_'):
+                old_comp.shutdown_()
 
     cidx[cid][eid] = comp
     eidx[eid][cid] = comp
-    oidx[id(comp)].add(eid)
+    oidx[id(comp)].append(t)
 
     add_to_archetype(eid)
 
@@ -283,17 +289,22 @@ def remove_component(eid: EntityID, *cids: ComponentID) -> None:
         # Also, no need to try each on their own
         try:
             obj = cidx[cid][eid]
-            obj_id = id(obj)
-            del cidx[cid][eid]
-            del eidx[eid][cid]
-            oidx[obj_id].discard(eid)
-            if not oidx[obj_id]:
-                del oidx[id(obj)]
         except KeyError:
+            continue
+
+        obj_id = id(obj)
+        del cidx[cid][eid]
+        del eidx[eid][cid]
+        try:
+            oidx[obj_id].remove((eid, cid))
+        except ValueError:
             pass
-        else:
-            if hasattr(obj, 'shutdown_'):
-                obj.shutdown_()
+
+        if not oidx[obj_id]:
+            del oidx[id(obj)]
+
+        if hasattr(obj, 'shutdown_'):
+            obj.shutdown_()
 
 
 def add_system(fn: SystemFunction, *cids: ComponentID) -> None:
@@ -505,7 +516,7 @@ def eid_of_comp(comp: Component) -> set[EntityID]:
     :return: A set of all entity IDs that contain the given component.
     """
 
-    return oidx.get(id(comp), set())
+    return [_[0] for _ in oidx[id(comp)]]
 
 
 def cid_of_comp(eid: EntityID, comp: Component) -> ComponentID:
