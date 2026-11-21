@@ -1,3 +1,23 @@
+# v0.5.2 - Reworked the oidx
+
+A nasty edge case in the oidx lead to a complete rework.
+
+A component can be put into multiple entities.  For that reason,
+eid_of_comp returned a set.
+
+I didn't think of the possibilities to add the same component twice into
+the same entity, so the `set` never was an issue.
+
+But low integers are singletons.  Having a `health` and an `damage`
+component both with the value 10 resulted in the same oidx entry, and
+since the oidx entries are a `set`, the entity was registered only once.
+
+When either health or damage would have been removed or updated, the only oidx
+entry with this eid would be removed, resulting in an index inconsistency.
+
+oidx entries are now lists.  Except for the datatype of the result, nothing
+should change for the user.
+
 # v0.5.1
 
 - No code changes, only a dependency fix for "tinyecs[all]"
