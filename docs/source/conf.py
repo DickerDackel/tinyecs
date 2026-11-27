@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 # RTDs working directory when building is where conf.py sits
-sys.path.insert(0, (Path() / '..' / '..' / 'src').resolve())
+sys.path.insert(0, str((Path() / '..' / '..' / 'src').resolve()))
 p = Path()
 print(f'DEBUG: {p.resolve()}')
 print(f'DEBUG: {list(p.glob('*'))}')
