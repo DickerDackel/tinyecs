@@ -9,7 +9,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, Path('src').resolve())
+sys.path.insert(0, (Path('..') / 'src').resolve())
 
 
 project = 'tinyecs'
