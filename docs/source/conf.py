@@ -14,6 +14,8 @@ sys.path.insert(0, (Path() / '..' / '..' / 'src').resolve())
 p = Path()
 print(f'DEBUG: {p.resolve()}')
 print(f'DEBUG: {list(p.glob('*'))}')
+print(f'DEBUG: {sys.path[0]}')
+print(f'DEBUG: {list(Path(sys.path[0]).glob('*'))}')
 
 
 project = 'tinyecs'
